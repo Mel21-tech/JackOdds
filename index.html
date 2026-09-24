@@ -184,19 +184,6 @@
   .a-D{ background:rgba(201,144,63,.28); }
   .a-P{ background:rgba(106,121,184,.28); }
   .a-R{ background:rgba(107,107,107,.3); }
-  .bankroll-row{ display:flex; gap:10px; margin-bottom:12px; }
-  .bankroll-row label{ flex:1; font-size:0.75rem; opacity:0.7; display:block; margin-bottom:4px; }
-  .bankroll-row input{ width:100%; background:rgba(0,0,0,0.25); border:1px solid rgba(211,167,92,0.3); color:var(--cream); border-radius:6px; padding:8px 10px; font-size:0.95rem; }
-  .kelly-suggest{ font-size:.75rem; background:rgba(211,167,92,.12); border:1px solid rgba(211,167,92,.3); border-radius:8px; padding:8px 10px; margin-bottom:12px; }
-  .btn-row{ display:flex; gap:8px; flex-wrap:wrap; }
-  .btn-row button{ flex:1; min-width:100px; padding:10px; border-radius:6px; border:1px solid rgba(211,167,92,0.35); background:rgba(211,167,92,0.12); color:var(--gold); font-weight:600; font-size:0.8rem; cursor:pointer; }
-  .btn-row button.win{ border-color:rgba(74,154,114,.5); color:#8fd6ac; background:rgba(74,154,114,.15);}
-  .btn-row button.lose{ border-color:rgba(168,57,74,.5); color:#e2969d; background:rgba(168,57,74,.15);}
-  .btn-row button.push{ border-color:rgba(255,255,255,.3); color:var(--cream); background:rgba(255,255,255,.06);}
-  .hand-resolve{ margin-bottom:10px; }
-  .hand-resolve .hr-title{ font-size:.72rem; opacity:.6; margin-bottom:6px; }
-  .history{ margin-top:12px; font-size:0.78rem; opacity:0.7; max-height:100px; overflow-y:auto; }
-  .history div{ padding:3px 0; border-bottom:1px solid rgba(255,255,255,0.06); }
   .note{ font-size:0.72rem; opacity:0.55; text-align:center; margin-top:24px; line-height:1.5; }
   .train-btn{ width:100%; padding:14px; border-radius:10px; border:1px solid var(--gold); background:linear-gradient(160deg, rgba(211,167,92,.22), rgba(211,167,92,.08)); color:var(--gold-bright); font-family:'Fraunces',serif; font-weight:600; font-size:1rem; cursor:pointer; }
   /* ---- Onglets ---- */
@@ -287,7 +274,6 @@
   .t-actions button{ min-height:48px; }
   .reset-link{ padding:8px 6px; }
   .tab-btn{ min-height:42px; }
-  .btn-row button{ min-height:44px; }
   .demo-seatcount button{ width:38px; height:38px; }
 
   /* ---- Halo de focus sur la zone active (croupier/joueur) ---- */
@@ -380,10 +366,6 @@
     table.strategy-table{ font-size:.82rem; }
     table.strategy-table th, table.strategy-table td{ padding:9px 12px; min-width:34px; }
 
-    .bankroll-row input{ padding:11px 12px; font-size:1.05rem; }
-    .kelly-suggest{ font-size:.85rem; padding:12px 14px; }
-    .btn-row button{ padding:13px; font-size:.86rem; }
-    .history{ font-size:.85rem; max-height:140px; }
 
     /* Entraînement : plaque plus large, cartes agrandies, boutons plus grands */
     .training-overlay .t-stats{ gap:34px; font-size:.95rem; }
@@ -415,12 +397,33 @@
 
     .note{ font-size:.8rem; }
     .kbd-hint{ font-size:.74rem; }
+
+    .menu-grid{ grid-template-columns:repeat(3, 1fr); gap:16px; }
+    .menu-card{ padding:30px 16px; min-height:140px; border-radius:18px; }
+    .menu-card .mc-ic{ font-size:2.2rem; }
+    .menu-card .mc-title{ font-size:1.05rem; }
+    .menu-card .mc-desc{ font-size:0.78rem; }
   }
 
   /* Très grands écrans : on desserre encore un peu la colonne principale */
   @media screen and (min-width: 1280px){
     body{ max-width:1040px; }
+  }  /* ---- Menu d'accueil ---- */
+  body.on-menu .verdict,
+  body.on-menu .tab-bar{ display:none; }
+  .menu-grid{ display:grid; grid-template-columns:repeat(2, 1fr); gap:12px; }
+  .menu-card{
+    display:flex; flex-direction:column; align-items:center; text-align:center; gap:6px;
+    background:rgba(0,0,0,0.2); border:1px solid rgba(211,167,92,0.22); border-radius:14px;
+    padding:22px 12px; cursor:pointer; color:var(--cream); min-height:110px;
+    transition:transform .12s ease, border-color .15s ease, background .15s ease;
   }
+  .menu-card:active{ transform:scale(0.96); }
+  .menu-card:hover{ border-color:var(--gold); background:rgba(211,167,92,0.1); }
+  .menu-card .mc-ic{ font-size:1.7rem; }
+  .menu-card .mc-title{ font-family:'Fraunces',Georgia,serif; font-weight:600; font-size:0.92rem; color:var(--gold-bright); }
+  .menu-card .mc-desc{ font-size:0.68rem; opacity:0.6; line-height:1.35; }
+
 </style>
 </head>
 <body>
@@ -442,18 +445,31 @@
 </div>
 
 <div class="tab-bar" id="tabBar">
-  <button class="tab-btn active" data-tab="live"><span class="ic">🎯</span>Live</button>
+  <button class="tab-btn" data-tab="menu"><span class="ic">🏠</span>Menu</button>
+  <button class="tab-btn" data-tab="live"><span class="ic">🎯</span>Live</button>
   <button class="tab-btn" data-tab="probs"><span class="ic">📊</span>Probabilités</button>
   <button class="tab-btn" data-tab="sidebets"><span class="ic">🃏</span>Side bets</button>
   <button class="tab-btn" data-tab="count"><span class="ic">🔢</span>Comptage</button>
   <button class="tab-btn" data-tab="grid"><span class="ic">📋</span>Grille</button>
   <button class="tab-btn" data-tab="settings"><span class="ic">⚙️</span>Réglages</button>
-  <button class="tab-btn" data-tab="bankroll"><span class="ic">💰</span>Bankroll</button>
   <button class="tab-btn" data-tab="training"><span class="ic">🎓</span>Entraînement</button>
   <button class="tab-btn" data-tab="demo"><span class="ic">🎰</span>Table démo</button>
 </div>
 
-<div class="tab-panel active" data-tab="live">
+<div class="tab-panel active" data-tab="menu">
+  <div class="menu-grid">
+    <button class="menu-card" data-tab="live"><span class="mc-ic">🎯</span><span class="mc-title">Live</span><span class="mc-desc">Stratégie recommandée main par main</span></button>
+    <button class="menu-card" data-tab="probs"><span class="mc-ic">📊</span><span class="mc-title">Probabilités</span><span class="mc-desc">Chances de gain, push, perte</span></button>
+    <button class="menu-card" data-tab="sidebets"><span class="mc-ic">🃏</span><span class="mc-title">Side bets</span><span class="mc-desc">Paris annexes et résultats</span></button>
+    <button class="menu-card" data-tab="count"><span class="mc-ic">🔢</span><span class="mc-title">Comptage</span><span class="mc-desc">Comptage de cartes Hi-Lo</span></button>
+    <button class="menu-card" data-tab="grid"><span class="mc-ic">📋</span><span class="mc-title">Grille</span><span class="mc-desc">Table de stratégie de base</span></button>
+    <button class="menu-card" data-tab="settings"><span class="mc-ic">⚙️</span><span class="mc-title">Réglages</span><span class="mc-desc">Règles de la table configurables</span></button>
+    <button class="menu-card" data-tab="training"><span class="mc-ic">🎓</span><span class="mc-title">Entraînement</span><span class="mc-desc">Entraîne-toi à la stratégie de base</span></button>
+    <button class="menu-card" data-tab="demo"><span class="mc-ic">🎰</span><span class="mc-title">Table démo</span><span class="mc-desc">Joue une partie complète simulée</span></button>
+  </div>
+</div>
+
+<div class="tab-panel" data-tab="live">
   <div class="table-felt">
     <div class="zone dealer-zone">
       <div class="zone-header"><span class="zone-label">♦ Croupier</span><span class="zone-total" id="dealerTotal"></span></div>
@@ -562,27 +578,6 @@
       </div>
     </div>
     <div class="prob-note" id="robotNote" style="display:none;">Mode Robot/en ligne : chaque carte est tirée indépendamment (RNG, mélange continu) — pas de sabot qui se vide, donc pas de comptage de cartes possible. Le panneau de comptage et le nombre de paquets sont masqués, et les probabilités utilisent un tirage uniforme (équivalent à un sabot infini).</div>
-  </div>
-</div>
-
-<div class="tab-panel" data-tab="bankroll">
-  <div class="panel">
-    <h2>Gestion de bankroll</h2>
-    <div class="bankroll-row">
-      <div><label>Bankroll (€)</label><input type="number" id="bankroll" value="200"></div>
-      <div><label>Mise de base (€)</label><input type="number" id="miseBase" value="10"></div>
-    </div>
-    <div class="kelly-suggest" id="kellySuggest"></div>
-    <div class="hand-resolve">
-      <div class="hr-title">Situation de la mise :</div>
-      <div class="toggle-pill">
-        <button data-sit="simple" class="active" id="sitSimple">Mise simple</button>
-        <button data-sit="double" id="sitDouble">Doublée (x2)</button>
-        <button data-sit="split" id="sitSplit">Séparée (2 mains)</button>
-      </div>
-    </div>
-    <div id="resolveButtons"></div>
-    <div class="history" id="history"></div>
   </div>
 </div>
 
@@ -934,17 +929,6 @@ function getDeviation(total, soft, playerCards, dv, tc){
   return null;
 }
 
-function kellySuggestion(trueCount, bankroll, payout){
-  // Avantage ≈ avantage de base de la maison (négatif) + ~0,5% par unité de True Count.
-  // Avantage de base : ~ -0,5% en 3:2, nettement pire (~ -1,5%) en 6:5 (le paiement réduit
-  // à lui seul retire environ 1,4 point d'avantage au joueur).
-  const baseEdge = (payout && payout<1.4) ? -0.015 : -0.005;
-  const edge = baseEdge + trueCount*0.005;
-  if(edge<=0) return {edge, fraction:0, bet:0};
-  const fraction = Math.min(edge/1.3, 0.05); // plafonné à 5% du capital par prudence
-  return {edge, fraction, bet: bankroll*fraction};
-}
-
 // ================= État de l'application =================
 const config = { numDecks:6, dealerHitsSoft17:false, dasAllowed:true, blackjackPayout:1.5, tableStyle:'real' };
 let shoeArr = [];
@@ -997,18 +981,6 @@ function updateCountDisplay(){
   document.getElementById('runningCountVal').textContent = runningCount>0?('+'+runningCount):runningCount;
   document.getElementById('trueCountVal').textContent = (trueCount>0?'+':'')+trueCount.toFixed(1);
   document.getElementById('decksLeftVal').textContent = decksLeft.toFixed(1);
-  refreshKelly(trueCount);
-}
-
-function refreshKelly(trueCount){
-  const bankroll = parseFloat(document.getElementById('bankroll').value)||0;
-  const k = kellySuggestion(trueCount, bankroll, config.blackjackPayout);
-  const el = document.getElementById('kellySuggest');
-  if(k.fraction<=0){
-    el.textContent = 'Avantage estimé ≈ '+(k.edge*100).toFixed(2)+'% (encore à la maison) : aucune surmise conseillée, reste sur ta mise de base ou mise minimum.';
-  } else {
-    el.textContent = 'Avantage estimé ≈ +'+(k.edge*100).toFixed(2)+'% → mise suggérée (Kelly plafonné) ≈ '+k.bet.toFixed(2)+'€. Approximation grossière, forte variance réelle, à ajuster selon ta tolérance au risque.';
-  }
 }
 
 function makeCardEl(rank, suit, onTap, big){
@@ -1470,81 +1442,6 @@ function applyTableStyle(style){
 }
 document.getElementById('setTableReal').addEventListener('click', ()=> applyTableStyle('real'));
 document.getElementById('setTableRobot').addEventListener('click', ()=> applyTableStyle('robot'));
-
-// ================= Bankroll / résolution des mises =================
-const history = document.getElementById('history');
-function logHistory(text){ const d=document.createElement('div'); d.textContent=text; history.prepend(d); }
-function applyDelta(delta, label){
-  const bankrollInput = document.getElementById('bankroll');
-  const br = parseFloat(bankrollInput.value)||0;
-  bankrollInput.value = (br+delta).toFixed(2);
-  logHistory((delta>=0?'+ ':'− ') + Math.abs(delta).toFixed(2) + ' € — '+label+' — bankroll : '+bankrollInput.value+' €');
-  updateCountDisplay();
-}
-function mise(){ return parseFloat(document.getElementById('miseBase').value)||0; }
-
-function renderResolveButtons(){
-  const el = document.getElementById('resolveButtons');
-  const m = mise();
-  if(handSituation==='simple'){
-    el.innerHTML = '';
-    const row = document.createElement('div'); row.className='btn-row';
-    const btns = [
-      {cls:'win', label:'Gagné', fn:()=>applyDelta(m,'gagné')},
-      {cls:'win', label:'Gagné Blackjack ('+(config.blackjackPayout===1.5?'3:2':'6:5')+')', fn:()=>applyDelta(m*config.blackjackPayout,'blackjack')},
-      {cls:'lose', label:'Perdu', fn:()=>applyDelta(-m,'perdu')},
-      {cls:'push', label:'Égalité', fn:()=>applyDelta(0,'égalité (push)')},
-    ];
-    btns.forEach(b=>{ const btn=document.createElement('button'); btn.className=b.cls; btn.textContent=b.label; btn.addEventListener('click', b.fn); row.appendChild(btn); });
-    el.appendChild(row);
-  } else if(handSituation==='double'){
-    el.innerHTML = '';
-    const row = document.createElement('div'); row.className='btn-row';
-    const btns = [
-      {cls:'win', label:'Gagné (x2)', fn:()=>applyDelta(2*m,'doublé gagné')},
-      {cls:'lose', label:'Perdu (x2)', fn:()=>applyDelta(-2*m,'doublé perdu')},
-      {cls:'push', label:'Égalité', fn:()=>applyDelta(0,'doublé égalité')},
-    ];
-    btns.forEach(b=>{ const btn=document.createElement('button'); btn.className=b.cls; btn.textContent=b.label; btn.addEventListener('click', b.fn); row.appendChild(btn); });
-    el.appendChild(row);
-  } else if(handSituation==='split'){
-    el.innerHTML = '<div class="hr-title">Main 1 :</div>';
-    const row1 = document.createElement('div'); row1.className='btn-row';
-    ['Gagné','Perdu','Égalité'].forEach(lbl=>{
-      const btn=document.createElement('button');
-      btn.className = lbl==='Gagné'?'win':lbl==='Perdu'?'lose':'push';
-      btn.textContent=lbl+' (main 1)';
-      btn.addEventListener('click', ()=> applyDelta(lbl==='Gagné'?m:lbl==='Perdu'?-m:0, 'split main 1 '+lbl.toLowerCase()));
-      row1.appendChild(btn);
-    });
-    el.appendChild(row1);
-    const t2 = document.createElement('div'); t2.className='hr-title'; t2.style.marginTop='8px'; t2.textContent='Main 2 :';
-    el.appendChild(t2);
-    const row2 = document.createElement('div'); row2.className='btn-row';
-    ['Gagné','Perdu','Égalité'].forEach(lbl=>{
-      const btn=document.createElement('button');
-      btn.className = lbl==='Gagné'?'win':lbl==='Perdu'?'lose':'push';
-      btn.textContent=lbl+' (main 2)';
-      btn.addEventListener('click', ()=> applyDelta(lbl==='Gagné'?m:lbl==='Perdu'?-m:0, 'split main 2 '+lbl.toLowerCase()));
-      row2.appendChild(btn);
-    });
-    el.appendChild(row2);
-  }
-}
-function wireSituation(id, val){
-  document.getElementById(id).addEventListener('click', ()=>{
-    ['sitSimple','sitDouble','sitSplit'].forEach(i=>document.getElementById(i).classList.remove('active'));
-    document.getElementById(id).classList.add('active');
-    handSituation = val;
-    renderResolveButtons();
-  });
-}
-wireSituation('sitSimple','simple'); wireSituation('sitDouble','double'); wireSituation('sitSplit','split');
-document.getElementById('bankroll').addEventListener('input', ()=>{
-  const totalRemaining = shoeArr.reduce((a,b)=>a+b,0);
-  const decksLeft = Math.max(totalRemaining/52, 0.25);
-  refreshKelly(runningCount/decksLeft);
-});
 
 // ================= Mode entraînement =================
 let trainScore=0, trainTotal=0, trainTimerInt=null, trainStart=0, trainCurrent=null;
@@ -2132,22 +2029,26 @@ document.getElementById('exitFullscreenBtn').addEventListener('click', ()=>{ hap
 safeOrientationLock();
 
 // ================= Onglets =================
-let currentTab = 'live';
+let currentTab = 'menu';
 function switchTab(tab){
   currentTab = tab;
   document.querySelectorAll('.tab-panel').forEach(p=> p.classList.toggle('active', p.dataset.tab===tab));
   document.querySelectorAll('.tab-btn').forEach(b=> b.classList.toggle('active', b.dataset.tab===tab));
+  document.body.classList.toggle('on-menu', tab==='menu');
   if(tab==='training' && !trainSessionStarted){ startTrainingSession(); }
   if(tab==='demo'){ demoRenderAll(); }
 }
 document.querySelectorAll('.tab-btn').forEach(b=>{
   b.addEventListener('click', ()=> switchTab(b.dataset.tab));
 });
+document.querySelectorAll('.menu-card').forEach(b=>{
+  b.addEventListener('click', ()=> switchTab(b.dataset.tab));
+});
+document.body.classList.add('on-menu');
 
 // ================= Init =================
 resetShoe(false);
 buildStrategyGrid();
-renderResolveButtons();
 renderDealerZone();
 renderPlayerZone();
 evaluate();
