@@ -1,0 +1,2156 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#08201a">
+<title>JackOdds ♠️</title>
+<style>
+  /* Polices système uniquement — aucune dépendance réseau externe, pour éviter tout blocage
+     dans les environnements sandboxés (aperçu d'artefact, CSP restrictive, etc.) */
+  :root{
+    --felt-dark:#08201a;
+    --felt:#0e3527;
+    --felt-light:#155943;
+    --gold:#d3a75c;
+    --gold-bright:#f0d999;
+    --cream:#efe6d3;
+    --card-white:#faf6ec;
+    --ink:#181410;
+    --red:#a8394a;
+    --hit:#4a9a72;
+    --stand:#8a4a4a;
+    --double:#c9903f;
+    --split:#6a79b8;
+    --surrender:#6b6b6b;
+    --bust:#c0394f;
+  }
+  *{box-sizing:border-box;}
+  html{ scroll-padding-top:env(safe-area-inset-top, 0px); }
+  body{
+    margin:0;
+    background:
+      radial-gradient(ellipse 900px 500px at 50% -10%, rgba(21,89,67,0.55), transparent 60%),
+      repeating-linear-gradient(135deg, rgba(255,255,255,0.015) 0 2px, transparent 2px 6px),
+      linear-gradient(180deg, var(--felt-dark), #051510 90%);
+    font-family:'Inter',-apple-system,sans-serif;
+    color:var(--cream);
+    min-height:100vh;
+    padding:calc(18px + env(safe-area-inset-top, 0px)) calc(14px + env(safe-area-inset-right, 0px)) calc(60px + env(safe-area-inset-bottom, 0px)) calc(14px + env(safe-area-inset-left, 0px));
+  }
+  h1{
+    font-family:'Fraunces',Georgia,serif;
+    font-weight:600;
+    font-size:1.65rem;
+    text-align:center;
+    letter-spacing:0.01em;
+    margin:0 0 3px;
+    color:var(--gold-bright);
+    display:flex; align-items:center; justify-content:center; gap:9px;
+  }
+  h1 .emblem{ font-size:1.15rem; color:var(--gold); transform:translateY(-1px); }
+  .sub{ text-align:center; font-size:0.82rem; color:var(--cream); opacity:0.6; margin-bottom:20px; }
+  .panel{
+    background:rgba(0,0,0,0.2);
+    border:1px solid rgba(211,167,92,0.22);
+    border-radius:12px;
+    padding:16px;
+    margin-bottom:16px;
+  }
+  .panel h2{
+    font-family:'Fraunces',Georgia,serif;
+    font-size:0.92rem;
+    font-weight:600;
+    color:var(--gold-bright);
+    margin:0 0 12px;
+  }
+  .panel h2 small{ font-family:'Inter',sans-serif; font-weight:400; font-size:.68rem; opacity:.55; display:block; margin-top:2px;}
+  /* ---- Table 1 contre 1 ---- */
+  .table-felt{
+    background:
+      radial-gradient(ellipse 260px 160px at 20% 15%, rgba(255,255,255,0.05), transparent 60%),
+      repeating-linear-gradient(45deg, rgba(255,255,255,0.02) 0 3px, transparent 3px 8px),
+      radial-gradient(ellipse at 50% 0%, var(--felt-light), var(--felt-dark) 85%);
+    border:1px solid rgba(211,167,92,0.32);
+    border-radius:16px;
+    padding:20px 14px;
+    margin-bottom:14px;
+    position:relative;
+    box-shadow:inset 0 0 40px rgba(0,0,0,0.35), 0 8px 22px rgba(0,0,0,0.3);
+  }
+  .zone{ min-height:100px; }
+  .zone-header{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px; }
+  .zone-label{ font-family:'Fraunces',Georgia,serif; font-size:0.86rem; color:var(--gold-bright); opacity:0.9; font-weight:600; }
+  .zone-total{ font-size:0.78rem; color:var(--cream); opacity:0.7; }
+  .cards-row{ display:flex; min-height:82px; align-items:center; flex-wrap:wrap; padding-left:4px; }
+  .cards-row .empty-slot{ width:54px;height:78px; border:1.5px dashed rgba(211,167,92,0.28); border-radius:8px; margin-right:8px; }
+  .divider{ height:1px; background:linear-gradient(90deg, transparent, rgba(211,167,92,0.4), transparent); margin:18px 0; }
+  .playing-card{
+    width:54px;height:78px;
+    background:linear-gradient(160deg, #ffffff, var(--card-white));
+    border-radius:8px;
+    box-shadow:0 4px 8px rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.6) inset;
+    position:relative; margin-right:-16px;
+    display:flex;flex-direction:column;justify-content:space-between;
+    padding:5px 6px;
+    font-family:'Fraunces',Georgia,serif; font-weight:600;
+    animation:dealIn .42s cubic-bezier(.34,1.56,.64,1);
+    cursor:pointer; border:1px solid rgba(0,0,0,0.08);
+  }
+  .playing-card.big{ width:74px;height:106px; }
+  .playing-card:last-child{ margin-right:0; }
+  .playing-card.red{ color:var(--red); }
+  .playing-card.black{ color:#1c1917; }
+  .playing-card .corner{ font-size:0.78rem; line-height:1.15; }
+  .playing-card.big .corner{ font-size:1rem; }
+  .playing-card .corner.bottom{ align-self:flex-end; transform:rotate(180deg); }
+  .playing-card .suit-big{ position:absolute; top:50%;left:50%; transform:translate(-50%,-50%); font-size:1.4rem; opacity:0.9;}
+  .playing-card.big .suit-big{ font-size:2rem; }
+  @keyframes dealIn{
+    0%{ opacity:0; transform:translateY(-34px) scale(0.72) rotate(-11deg); box-shadow:0 2px 4px rgba(0,0,0,0.2); }
+    55%{ opacity:1; transform:translateY(4px) scale(1.07) rotate(2deg); }
+    78%{ transform:translateY(-1px) scale(0.98) rotate(-1deg); }
+    100%{ opacity:1; transform:translateY(0) scale(1) rotate(0); box-shadow:0 4px 8px rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.6) inset; }
+  }
+  .target-toggle{ display:flex; gap:8px; margin-bottom:14px; }
+  .target-toggle button{
+    flex:1; padding:10px; border-radius:8px; border:1px solid rgba(211,167,92,0.28);
+    background:rgba(0,0,0,0.18); color:var(--cream); opacity:0.55; font-size:0.8rem; font-weight:600;
+    cursor:pointer; transition:background .15s ease, opacity .15s ease;
+  }
+  .target-toggle button.active{ background:rgba(211,167,92,0.18); border-color:var(--gold); color:var(--gold-bright); opacity:1; }
+  .card-tray{ display:grid; grid-template-columns:repeat(7,1fr); gap:7px; margin-bottom:12px; }
+  .card-tray.small{ grid-template-columns:repeat(7,1fr); }
+  .tray-card{
+    aspect-ratio:2/3; background:linear-gradient(160deg, #ffffff, var(--card-white));
+    border:1px solid rgba(0,0,0,0.12); border-radius:7px;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Fraunces',Georgia,serif; font-size:0.95rem; font-weight:600; color:var(--ink);
+    cursor:pointer; box-shadow:0 2px 4px rgba(0,0,0,0.25);
+    transition:transform .12s ease, box-shadow .12s ease;
+  }
+  .tray-card:active{ transform:scale(0.88) translateY(2px); box-shadow:0 1px 2px rgba(0,0,0,0.2); }
+  .kbd-hint{ font-size:.66rem; opacity:.5; text-align:center; margin:-6px 0 10px; }
+  .empty-note{ font-size:0.8rem; opacity:0.5; font-style:italic; }
+  .reset-row{ display:flex; gap:10px; justify-content:center; margin-top:6px; }
+  .reset-link{ background:none;border:none;color:var(--cream); opacity:0.55;font-size:0.78rem;text-decoration:underline; cursor:pointer;padding:0; }
+  .verdict{
+    position:sticky; top:calc(8px + env(safe-area-inset-top, 0px)); z-index:50; text-align:center; padding:13px 16px; border-radius:12px; margin-bottom:14px;
+    background:rgba(7,26,20,0.95); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+    border:1px solid rgba(211,167,92,0.35); border-top:2px solid var(--gold); box-shadow:0 10px 24px rgba(0,0,0,0.5);
+  }
+  .verdict .action{ font-family:'Fraunces',Georgia,serif; font-size:1.55rem; font-weight:600; margin-bottom:3px; }
+  .verdict .why{ font-size:0.78rem; opacity:0.85; line-height:1.35; }
+  .verdict .verdict-prob{ font-size:0.78rem; font-weight:700; color:var(--gold); margin-top:6px; }
+  .verdict .deviation-tag{ display:inline-block; margin-top:6px; font-size:.68rem; background:rgba(168,57,74,.25); color:#f2b6bd; padding:2px 8px; border-radius:10px; }
+  .verdict.bust-state{ border-color:rgba(154,47,58,0.6); background:rgba(60,15,20,0.95); }
+  .verdict.bust-state .action{ color:var(--bust); font-size:1.9rem; }
+  .settings-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .settings-item label{ font-size:0.7rem; opacity:.65; display:block; margin-bottom:5px; }
+  .settings-item select{ width:100%; background:rgba(0,0,0,.25); border:1px solid rgba(211,167,92,.3); color:var(--cream); border-radius:6px; padding:8px; font-size:.82rem; }
+  .toggle-pill{ display:flex; gap:6px; }
+  .toggle-pill button{ flex:1; padding:8px 4px; border-radius:6px; border:1px solid rgba(211,167,92,.3); background:rgba(0,0,0,.18); color:var(--cream); opacity:.55; font-size:.72rem; cursor:pointer; }
+  .toggle-pill button.active{ background:rgba(211,167,92,.18); border-color:var(--gold); color:var(--gold-bright); opacity:1; }
+  .count-display{ display:flex; gap:10px; justify-content:center; margin-bottom:12px; }
+  .count-box{ text-align:center; background:rgba(0,0,0,.18); border:1px solid rgba(211,167,92,.2); border-radius:10px; padding:10px 16px; flex:1; }
+  .count-box .num{ font-family:'Fraunces',serif; font-size:1.7rem; font-weight:600; color:var(--gold-bright); }
+  .count-box .lbl{ font-size:.65rem; opacity:.6; margin-top:2px; }
+  .deviation-alert{ background:rgba(154,47,58,.18); border:1px solid rgba(168,57,74,.4); border-radius:8px; padding:10px; font-size:.78rem; margin-top:4px; color:#f0b8c0; }
+  .prob-row{ display:flex; justify-content:space-between; align-items:center; padding:9px 0; border-bottom:1px solid rgba(255,255,255,0.07); }
+  .prob-row:last-child{ border-bottom:none; }
+  .prob-row .label{ font-size:0.82rem; font-weight:600; display:flex; align-items:center; gap:6px; }
+  .prob-row .best-tag{ font-size:0.62rem; background:var(--gold); color:var(--felt-dark); padding:1px 6px; border-radius:10px; font-weight:700; }
+  .prob-row .bars{ display:flex; gap:2px; flex:1; margin:0 12px; height:8px; border-radius:4px; overflow:hidden; }
+  .prob-row .bar-win{ background:var(--hit); }
+  .prob-row .bar-push{ background:rgba(255,255,255,0.25); }
+  .prob-row .bar-lose{ background:var(--stand); }
+  .prob-row .pct{ font-size:0.72rem; opacity:0.75; min-width:118px; text-align:right; white-space:nowrap; }
+  .prob-empty{ font-size:0.8rem; opacity:0.5; font-style:italic; }
+  .prob-note{ font-size:0.7rem; opacity:0.6; margin-top:10px; line-height:1.4; }
+  .sidebet-row{ display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.07); }
+  .sidebet-row:last-child{ border-bottom:none; }
+  .sidebet-row .sb-name{ font-size:0.82rem; font-weight:600; flex:0 0 auto; }
+  .sidebet-row .sb-result{ font-size:0.78rem; text-align:right; opacity:0.85; }
+  .sidebet-row .sb-result.hit{ color:var(--hit); font-weight:700; }
+  .sidebet-row .sb-result.miss{ opacity:0.5; }
+  .grid-wrap{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  table.strategy-table{ border-collapse:collapse; font-size:.66rem; white-space:nowrap; }
+  table.strategy-table th, table.strategy-table td{ padding:5px 6px; text-align:center; border:1px solid rgba(255,255,255,.07); min-width:24px; }
+  table.strategy-table th{ color:var(--gold-bright); font-weight:600; background:rgba(0,0,0,.25); position:sticky; top:0; }
+  table.strategy-table td.rowhead{ color:var(--gold-bright); font-weight:600; background:rgba(0,0,0,.2); text-align:left; position:sticky; left:0; }
+  table.strategy-table td.hl{ outline:2px solid var(--gold-bright); outline-offset:-2px; }
+  .a-H{ background:rgba(74,154,114,.25); }
+  .a-S{ background:rgba(138,74,74,.25); }
+  .a-D{ background:rgba(201,144,63,.28); }
+  .a-P{ background:rgba(106,121,184,.28); }
+  .a-R{ background:rgba(107,107,107,.3); }
+  .bankroll-row{ display:flex; gap:10px; margin-bottom:12px; }
+  .bankroll-row label{ flex:1; font-size:0.75rem; opacity:0.7; display:block; margin-bottom:4px; }
+  .bankroll-row input{ width:100%; background:rgba(0,0,0,0.25); border:1px solid rgba(211,167,92,0.3); color:var(--cream); border-radius:6px; padding:8px 10px; font-size:0.95rem; }
+  .kelly-suggest{ font-size:.75rem; background:rgba(211,167,92,.12); border:1px solid rgba(211,167,92,.3); border-radius:8px; padding:8px 10px; margin-bottom:12px; }
+  .btn-row{ display:flex; gap:8px; flex-wrap:wrap; }
+  .btn-row button{ flex:1; min-width:100px; padding:10px; border-radius:6px; border:1px solid rgba(211,167,92,0.35); background:rgba(211,167,92,0.12); color:var(--gold); font-weight:600; font-size:0.8rem; cursor:pointer; }
+  .btn-row button.win{ border-color:rgba(74,154,114,.5); color:#8fd6ac; background:rgba(74,154,114,.15);}
+  .btn-row button.lose{ border-color:rgba(168,57,74,.5); color:#e2969d; background:rgba(168,57,74,.15);}
+  .btn-row button.push{ border-color:rgba(255,255,255,.3); color:var(--cream); background:rgba(255,255,255,.06);}
+  .hand-resolve{ margin-bottom:10px; }
+  .hand-resolve .hr-title{ font-size:.72rem; opacity:.6; margin-bottom:6px; }
+  .history{ margin-top:12px; font-size:0.78rem; opacity:0.7; max-height:100px; overflow-y:auto; }
+  .history div{ padding:3px 0; border-bottom:1px solid rgba(255,255,255,0.06); }
+  .note{ font-size:0.72rem; opacity:0.55; text-align:center; margin-top:24px; line-height:1.5; }
+  .train-btn{ width:100%; padding:14px; border-radius:10px; border:1px solid var(--gold); background:linear-gradient(160deg, rgba(211,167,92,.22), rgba(211,167,92,.08)); color:var(--gold-bright); font-family:'Fraunces',serif; font-weight:600; font-size:1rem; cursor:pointer; }
+  /* ---- Onglets ---- */
+  .tab-bar{ display:flex; gap:6px; overflow-x:auto; -webkit-overflow-scrolling:touch; padding:2px 0 10px; margin-bottom:6px; }
+  .tab-bar::-webkit-scrollbar{ height:3px; }
+  .tab-btn{ flex:0 0 auto; display:flex; align-items:center; gap:5px; padding:9px 13px; border-radius:20px; border:1px solid rgba(211,167,92,.28); background:rgba(0,0,0,.22); color:var(--cream); opacity:.6; font-size:.78rem; font-weight:600; white-space:nowrap; cursor:pointer; }
+  .tab-btn .ic{ font-size:.9rem; }
+  .tab-btn.active{ background:rgba(211,167,92,.22); border-color:var(--gold); color:var(--gold-bright); opacity:1; box-shadow:0 2px 8px rgba(211,167,92,.15); }
+  .tab-panel{ display:none; }
+  .tab-panel.active{ display:block; animation:fadeTab .18s ease; }
+  @keyframes fadeTab{ from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:translateY(0);} }
+  /* ---- Entraînement / démo, désormais intégrés en onglets (plus d'overlay plein écran) ---- */
+  .feature-panel{ display:flex; flex-direction:column; align-items:center; text-align:center; padding:6px 2px; }
+  .training-overlay .t-stats{ display:flex; gap:20px; margin-bottom:18px; font-size:.85rem; }
+  .training-overlay .t-stats b{ color:var(--gold-bright); font-family:'Fraunces',serif; font-size:1.3rem; display:block; }
+  .training-overlay .t-cards{ display:flex; gap:20px; margin-bottom:22px; align-items:center; justify-content:center; }
+  .training-overlay .t-cards .group{ display:flex; }
+  .training-overlay .t-vs{ opacity:.5; font-size:.8rem; }
+  .training-overlay .t-actions{ display:grid; grid-template-columns:1fr 1fr; gap:10px; width:100%; max-width:320px; margin:0 auto; }
+  .training-overlay .t-actions button{ padding:14px; border-radius:8px; border:1px solid rgba(211,167,92,.3); background:rgba(255,255,255,.05); color:var(--cream); font-weight:600; font-size:.85rem; cursor:pointer; }
+  .training-overlay .t-feedback{ min-height:28px; margin-top:16px; font-weight:600; font-size:.9rem; }
+  .training-overlay .t-close{ margin-top:16px; background:none; border:none; color:var(--cream); opacity:.5; text-decoration:underline; font-size:.78rem; cursor:pointer; }
+  .demo-table-wrap{
+    background:
+      radial-gradient(ellipse 320px 200px at 50% 0%, rgba(255,255,255,0.06), transparent 65%),
+      repeating-linear-gradient(45deg, rgba(255,255,255,0.02) 0 3px, transparent 3px 8px),
+      radial-gradient(ellipse 140% 100% at 50% -20%, var(--felt-light), var(--felt-dark) 80%);
+    border:1px solid rgba(211,167,92,0.32);
+    border-radius:50% 50% 16px 16px / 14% 14% 16px 16px;
+    padding:26px 14px 20px;
+    margin-bottom:14px;
+    box-shadow:inset 0 0 50px rgba(0,0,0,0.4), 0 10px 26px rgba(0,0,0,0.35);
+    position:relative;
+  }
+  .demo-header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+  .demo-bankroll{ font-family:'Fraunces',serif; font-size:1.15rem; color:var(--gold-bright); }
+  .demo-bankroll b{ color:var(--hit); transition:color .3s ease; }
+  .demo-bankroll b.flash-up{ color:#7ef0ab; }
+  .demo-bankroll b.flash-down{ color:var(--bust); }
+  .demo-dealer-row{ text-align:center; margin-bottom:14px; }
+  .demo-dealer-row .cards-row{ justify-content:center; min-height:auto; }
+  .demo-dealer-row .zone-label{ display:block; margin-bottom:6px; }
+  .demo-seatcount{ display:flex; align-items:center; justify-content:center; gap:12px; margin-bottom:14px; }
+  .demo-seatcount button{ width:32px;height:32px; border-radius:50%; border:1px solid rgba(211,167,92,.3); background:rgba(0,0,0,.2); color:var(--gold-bright); font-size:1rem; cursor:pointer; }
+  .demo-seatcount button:disabled{ opacity:.25; }
+  .demo-seats{ display:flex; gap:10px; overflow-x:auto; padding:4px 4px 14px; margin-bottom:4px; -webkit-overflow-scrolling:touch; }
+  .demo-seat{ flex:0 0 auto; width:106px; background:rgba(0,0,0,.22); border:1px solid rgba(211,167,92,.25); border-radius:12px; padding:9px 8px; text-align:center; transition:transform .15s ease, border-color .15s ease; }
+  .demo-seat:nth-child(odd){ transform:translateY(4px); }
+  .demo-seat.active-seat{ border-color:var(--gold-bright); box-shadow:0 0 0 2px rgba(240,217,153,.35), 0 4px 14px rgba(240,217,153,.15); transform:translateY(0) scale(1.04); }
+  .demo-seat .seat-label{ font-size:.66rem; opacity:.6; margin-bottom:4px; }
+  .demo-seat .seat-hand{ margin-bottom:6px; padding:3px; border-radius:6px; }
+  .demo-seat .seat-hand.active-hand{ outline:1px dashed var(--gold-bright); }
+  .demo-seat .hand-cards{ display:flex; justify-content:center; min-height:44px; align-items:center; }
+  .demo-seat .playing-card.mini{ width:32px; height:46px; margin-right:-13px; font-size:.55rem; padding:3px 4px; }
+  .demo-seat .playing-card.mini .suit-big{ font-size:.9rem; }
+  .demo-seat .seat-total{ font-size:.68rem; opacity:.8; margin-top:2px; }
+  .demo-seat .seat-status{ font-size:.62rem; margin-top:3px; font-weight:700; min-height:14px; }
+  .demo-seat input.bet-input{ width:64px; background:rgba(0,0,0,.25); border:1px solid rgba(211,167,92,.3); color:var(--cream); border-radius:5px; padding:5px; font-size:.78rem; text-align:center; }
+  .chip-stack{ display:flex; justify-content:center; margin:4px 0 2px; height:16px; align-items:flex-end; }
+  .chip{ width:16px;height:16px; border-radius:50%; margin-left:-6px; border:2px solid rgba(255,255,255,.5); box-shadow:0 1px 2px rgba(0,0,0,.4); }
+  .chip:first-child{ margin-left:0; }
+  .chip-5{ background:#a8394a; } .chip-25{ background:#4a9a72; } .chip-100{ background:#1c1917; border-color:#d3a75c; } .chip-500{ background:#6a79b8; }
+  .demo-controls{ display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-bottom:12px; }
+  .demo-controls button{ padding:12px 14px; border-radius:8px; border:1px solid rgba(211,167,92,.3); background:rgba(211,167,92,.12); color:var(--gold-bright); font-weight:600; font-size:.82rem; cursor:pointer; transition:transform .08s ease; }
+  .demo-controls button:active{ transform:scale(0.94); }
+  .demo-controls button:disabled{ opacity:.28; cursor:not-allowed; }
+  .demo-controls button.primary{ background:linear-gradient(160deg, rgba(74,154,114,.32), rgba(74,154,114,.1)); border-color:var(--hit); color:#bfe8d2; }
+  .demo-hint{ font-size:.68rem; opacity:.6; text-align:center; margin-bottom:10px; min-height:16px; }
+  .demo-log{ font-size:.72rem; opacity:.7; max-height:90px; overflow-y:auto; text-align:center; }
+  .demo-gameover{ text-align:center; padding:20px; font-size:.85rem; }
+  .result-flash{ position:absolute; font-size:1.4rem; animation:popFlash .9s ease forwards; pointer-events:none; }
+  @keyframes popFlash{ 0%{opacity:0; transform:scale(.5) translateY(6px);} 30%{opacity:1; transform:scale(1.15) translateY(-4px);} 100%{opacity:0; transform:scale(1) translateY(-18px);} }
+
+  /* ---- Verrouillage d'orientation : invite à repasser en portrait ---- */
+  .rotate-overlay{ display:none; position:fixed; inset:0; z-index:9999; background:var(--felt-dark); color:var(--gold-bright); flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:30px; font-family:'Inter',sans-serif; }
+  .rotate-overlay .spin-icon{ font-size:2.6rem; margin-bottom:14px; animation:spinHint 1.6s ease-in-out infinite; }
+  @keyframes spinHint{ 0%,100%{ transform:rotate(0deg); } 50%{ transform:rotate(-90deg); } }
+  @media screen and (orientation: landscape) and (max-width: 900px){
+    .rotate-overlay{ display:flex; }
+  }
+
+  /* ---- Zones tactiles agrandies (mobile) ---- */
+  .tray-card{ min-height:44px; }
+  .card-tray{ gap:8px; }
+  .target-toggle button{ min-height:46px; }
+  table.strategy-table td, table.strategy-table th{ min-width:34px; min-height:34px; padding:8px 7px; }
+  .demo-controls button{ min-height:46px; min-width:64px; }
+  .t-actions button{ min-height:48px; }
+  .reset-link{ padding:8px 6px; }
+  .tab-btn{ min-height:42px; }
+  .btn-row button{ min-height:44px; }
+  .demo-seatcount button{ width:38px; height:38px; }
+
+  /* ---- Halo de focus sur la zone active (croupier/joueur) ---- */
+  .zone{ border-radius:10px; padding:6px; margin:-6px; transition:box-shadow .25s ease, background .25s ease; }
+  .zone.zone-focused{ box-shadow:0 0 0 2px var(--gold-bright), 0 0 18px rgba(240,217,153,.35); background:rgba(240,217,153,.06); }
+
+  /* ---- Mode plein écran épuré (table démo) ---- */
+  .fullscreen-btn{ position:absolute; top:10px; right:10px; z-index:5; background:rgba(0,0,0,.35); border:1px solid rgba(211,167,92,.4); color:var(--gold-bright); border-radius:8px; padding:8px 10px; font-size:.9rem; cursor:pointer; min-height:44px; }
+  body.demo-fullscreen-active .tab-bar,
+  body.demo-fullscreen-active h1,
+  body.demo-fullscreen-active .sub,
+  body.demo-fullscreen-active .verdict,
+  body.demo-fullscreen-active .note{ display:none !important; }
+  body.demo-fullscreen-active{ padding-top:calc(6px + env(safe-area-inset-top, 0px)); }
+  body.demo-fullscreen-active .tab-panel[data-tab="demo"] .panel{ border:none; background:transparent; padding:4px; margin-bottom:0; }
+  .exit-fullscreen-btn{ display:none; position:fixed; top:calc(10px + env(safe-area-inset-top, 0px)); left:calc(10px + env(safe-area-inset-left, 0px)); z-index:10000; background:rgba(0,0,0,.45); border:1px solid rgba(211,167,92,.4); color:var(--gold-bright); border-radius:8px; padding:8px 12px; font-size:.82rem; cursor:pointer; min-height:44px; }
+  body.demo-fullscreen-active .exit-fullscreen-btn{ display:block; }
+
+  /* ================================================================
+     ---- Mise en page grand écran (ordinateur / tablette large) ----
+     Le design ci-dessus est pensé mobile ; à partir de 860px on recentre
+     tout dans une colonne confortable, on agrandit les éléments et on
+     profite de l'espace pour des mises en page en colonnes.
+     ================================================================ */
+  @media screen and (min-width: 860px){
+    body{
+      max-width:900px;
+      margin:0 auto;
+      padding:40px 32px 70px;
+    }
+    h1{ font-size:2.3rem; margin-bottom:6px; gap:14px; }
+    h1 .emblem{ font-size:1.7rem; }
+    .sub{ font-size:1rem; margin-bottom:30px; }
+
+    /* Onglets : plus besoin de scroll, on centre une rangée aérée */
+    .tab-bar{
+      overflow-x:visible; flex-wrap:wrap; justify-content:center;
+      gap:9px; padding:4px 0 18px; margin-bottom:14px;
+    }
+    .tab-btn{ padding:11px 18px; font-size:.86rem; border-radius:24px; }
+
+    .verdict{ padding:22px 28px; border-radius:16px; margin-bottom:22px; }
+    .verdict .action{ font-size:2.3rem !important; }
+    .verdict .why{ font-size:.95rem; }
+
+    .panel{ padding:26px 28px; border-radius:16px; margin-bottom:22px; }
+    .panel h2{ font-size:1.08rem; margin-bottom:18px; }
+    .panel h2 small{ font-size:.76rem; }
+
+    /* Table 1 contre 1 : plus large, cartes plus grandes */
+    .table-felt{ padding:34px 30px; border-radius:22px; }
+    .zone-label{ font-size:1rem; }
+    .zone-total{ font-size:.88rem; }
+    .cards-row{ min-height:112px; }
+    .cards-row .empty-slot{ width:70px; height:100px; margin-right:10px; border-radius:10px; }
+    .playing-card{ width:70px; height:100px; border-radius:10px; margin-right:-20px; padding:7px 8px; }
+    .playing-card.big{ width:94px; height:134px; }
+    .playing-card .corner{ font-size:.95rem; }
+    .playing-card.big .corner{ font-size:1.2rem; }
+    .playing-card .suit-big{ font-size:1.7rem; }
+    .playing-card.big .suit-big{ font-size:2.4rem; }
+    .divider{ margin:24px 0; }
+
+    /* Carte à jouer / sélecteurs de rang, sur une grille plus large */
+    .card-tray{ grid-template-columns:repeat(7, 1fr); gap:10px !important; }
+    .tray-card{ font-size:.95rem; min-height:52px; }
+
+    /* Probabilités, side bets, comptage : lignes plus lisibles */
+    .prob-row{ padding:13px 0; }
+    .prob-row .label{ font-size:.92rem; }
+    .prob-row .bars{ height:10px; margin:0 18px; }
+    .prob-row .pct{ font-size:.8rem; min-width:130px; }
+    .sidebet-row{ padding:13px 0; }
+    .sidebet-row .sb-name{ font-size:.9rem; }
+    .sidebet-row .sb-result{ font-size:.85rem; }
+
+    .count-display{ gap:16px; margin-bottom:18px; }
+    .count-box{ padding:16px 20px; border-radius:14px; }
+    .count-box .num{ font-size:2.2rem; }
+    .count-box .lbl{ font-size:.72rem; }
+    .deviation-alert{ font-size:.85rem; padding:13px 14px; }
+
+    /* Réglages sur 3 colonnes : plus d'air, choix mieux séparés */
+    .settings-grid{ grid-template-columns:repeat(3, 1fr); gap:18px; }
+    .settings-item label{ font-size:.76rem; }
+    .settings-item select{ padding:10px; font-size:.88rem; }
+    .toggle-pill button{ padding:10px 6px; font-size:.78rem; }
+
+    /* Grille de stratégie : plus grande, plus lisible, plus besoin de scroller sur le côté */
+    table.strategy-table{ font-size:.82rem; }
+    table.strategy-table th, table.strategy-table td{ padding:9px 12px; min-width:34px; }
+
+    .bankroll-row input{ padding:11px 12px; font-size:1.05rem; }
+    .kelly-suggest{ font-size:.85rem; padding:12px 14px; }
+    .btn-row button{ padding:13px; font-size:.86rem; }
+    .history{ font-size:.85rem; max-height:140px; }
+
+    /* Entraînement : plaque plus large, cartes agrandies, boutons plus grands */
+    .training-overlay .t-stats{ gap:34px; font-size:.95rem; }
+    .training-overlay .t-stats b{ font-size:1.7rem; }
+    .training-overlay .t-cards{ gap:34px; margin-bottom:30px; }
+    .training-overlay .t-actions{ max-width:420px; gap:14px; }
+    .training-overlay .t-actions button{ padding:16px; font-size:.92rem; }
+    .training-overlay .t-feedback{ font-size:1.05rem; }
+
+    /* Table démo : la table s'élargit, les places ne défilent plus, elles s'enroulent autour du centre */
+    .demo-table-wrap{ padding:38px 26px 28px; }
+    .demo-bankroll{ font-size:1.4rem; }
+    .demo-seatcount button{ width:42px; height:42px; font-size:1.15rem; }
+    .demo-seats{
+      overflow-x:visible; flex-wrap:wrap; justify-content:center;
+      gap:16px; padding:8px 8px 18px;
+    }
+    .demo-seat{ width:150px; padding:14px 12px; border-radius:16px; }
+    .demo-seat .seat-label{ font-size:.76rem; }
+    .demo-seat .hand-cards{ min-height:60px; }
+    .demo-seat .playing-card.mini{ width:44px; height:62px; margin-right:-17px; font-size:.68rem; padding:4px 5px; }
+    .demo-seat .playing-card.mini .suit-big{ font-size:1.15rem; }
+    .demo-seat .seat-total{ font-size:.78rem; }
+    .demo-seat .seat-status{ font-size:.7rem; }
+    .demo-seat input.bet-input{ width:78px; padding:6px; font-size:.86rem; }
+    .demo-controls button{ padding:13px 20px; font-size:.88rem; }
+    .demo-hint{ font-size:.76rem; }
+    .demo-log{ font-size:.8rem; max-height:110px; }
+
+    .note{ font-size:.8rem; }
+    .kbd-hint{ font-size:.74rem; }
+  }
+
+  /* Très grands écrans : on desserre encore un peu la colonne principale */
+  @media screen and (min-width: 1280px){
+    body{ max-width:1040px; }
+  }
+</style>
+</head>
+<body>
+<div class="rotate-overlay" id="rotateOverlay">
+  <div class="spin-icon">📱</div>
+  <div style="font-family:'Fraunces',serif; font-size:1.1rem; margin-bottom:6px;">Repasse en mode portrait</div>
+  <div style="font-size:.8rem; opacity:.7;">La table est pensée pour un écran vertical — le mode paysage décale l'affichage.</div>
+</div>
+<button class="exit-fullscreen-btn" id="exitFullscreenBtn">✕ Quitter le plein écran</button>
+
+<h1><span class="emblem">♠</span>JackOdds ♠️</h1>
+<div class="sub">Sabot fini, règles configurables, comptage Hi-Lo et entraînement inclus</div>
+
+<div class="verdict" id="verdict">
+  <div class="action" id="actionText">—</div>
+  <div class="why" id="whyText">Sélectionne la carte du croupier et tes deux premières cartes.</div>
+  <div class="verdict-prob" id="verdictProb"></div>
+  <div id="deviationTag"></div>
+</div>
+
+<div class="tab-bar" id="tabBar">
+  <button class="tab-btn active" data-tab="live"><span class="ic">🎯</span>Live</button>
+  <button class="tab-btn" data-tab="probs"><span class="ic">📊</span>Probabilités</button>
+  <button class="tab-btn" data-tab="sidebets"><span class="ic">🃏</span>Side bets</button>
+  <button class="tab-btn" data-tab="count"><span class="ic">🔢</span>Comptage</button>
+  <button class="tab-btn" data-tab="grid"><span class="ic">📋</span>Grille</button>
+  <button class="tab-btn" data-tab="settings"><span class="ic">⚙️</span>Réglages</button>
+  <button class="tab-btn" data-tab="bankroll"><span class="ic">💰</span>Bankroll</button>
+  <button class="tab-btn" data-tab="training"><span class="ic">🎓</span>Entraînement</button>
+  <button class="tab-btn" data-tab="demo"><span class="ic">🎰</span>Table démo</button>
+</div>
+
+<div class="tab-panel active" data-tab="live">
+  <div class="table-felt">
+    <div class="zone dealer-zone">
+      <div class="zone-header"><span class="zone-label">♦ Croupier</span><span class="zone-total" id="dealerTotal"></span></div>
+      <div class="cards-row" id="dealerCardsRow"><div class="empty-slot"></div></div>
+    </div>
+    <div class="divider"></div>
+    <div class="zone player-zone">
+      <div class="zone-header"><span class="zone-label">♣ Toi</span><span class="zone-total" id="playerTotal"></span></div>
+      <div class="cards-row" id="playerCardsRow"><div class="empty-slot"></div><div class="empty-slot"></div></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="target-toggle">
+      <button data-target="dealer" id="btnTargetDealer" class="active">Distribuer au croupier</button>
+      <button data-target="player" id="btnTargetPlayer">Distribuer à toi</button>
+    </div>
+    <div class="card-tray" id="cardTray"></div>
+    <div class="kbd-hint">Clavier : 2-9, 0 (=10), V, D, R, A · Tab pour changer de cible · Retour arrière pour annuler</div>
+    <div class="reset-row">
+      <button class="reset-link" id="resetHand">nouvelle main</button>
+      <button class="reset-link" id="resetShoe">nouveau sabot (mélanger)</button>
+    </div>
+  </div>
+</div>
+
+<div class="tab-panel" data-tab="probs">
+  <div class="panel">
+    <h2>Probabilités par action<small>Recalculées en direct à chaque carte, sans jamais figer l'affichage précédent</small></h2>
+    <div id="probPanel"><span class="prob-empty">Sélectionne la carte du croupier et tes deux premières cartes (onglet Live).</span></div>
+    <div class="prob-note" id="probNote"></div>
+    <div id="splitAdvice"></div>
+  </div>
+</div>
+
+<div class="tab-panel" data-tab="sidebets">
+  <div class="panel">
+    <h2>Side bets</h2>
+    <div id="sideBetsPanel"><span class="prob-empty">Sélectionne les cartes pour voir si un side bet passe (onglet Live).</span></div>
+    <div class="prob-note">Perfect Pairs se joue sur tes 2 premières cartes, 21+3 sur tes 2 cartes + la carte du croupier, l'assurance seulement si le croupier montre un As.</div>
+  </div>
+</div>
+
+<div class="tab-panel" data-tab="count">
+  <div class="panel" id="countingPanel">
+    <h2>Comptage de cartes (Hi-Lo)<small>Compte courant depuis le dernier mélange, mis à jour à chaque carte distribuée dans l'onglet Live</small></h2>
+    <div class="count-display">
+      <div class="count-box"><div class="num" id="runningCountVal">0</div><div class="lbl">Running Count</div></div>
+      <div class="count-box"><div class="num" id="trueCountVal">0.0</div><div class="lbl">True Count</div></div>
+      <div class="count-box"><div class="num" id="decksLeftVal">6.0</div><div class="lbl">Paquets restants (est.)</div></div>
+    </div>
+    <div class="hr-title" style="font-size:.72rem;opacity:.6;margin-bottom:6px;">Cartes vues à la table (pas les tiennes) — carte cachée du croupier révélée, cartes des autres joueurs :</div>
+    <div class="card-tray small" id="extraTray"></div>
+    <div id="deviationAlertBox"></div>
+  </div>
+</div>
+
+<div class="tab-panel" data-tab="grid">
+  <div class="panel">
+    <h2>Grille de stratégie complète<small>La cellule en surbrillance correspond à ta main actuelle (onglet Live)</small></h2>
+    <div class="grid-wrap"><div id="strategyGrid"></div></div>
+  </div>
+</div>
+
+<div class="tab-panel" data-tab="settings">
+  <div class="panel">
+    <h2>Règles de la table<small>Modifie selon ton casino — tout le moteur s'adapte en direct</small></h2>
+    <div class="settings-grid">
+      <div class="settings-item" style="grid-column:1/-1;">
+        <label>Style de table</label>
+        <div class="toggle-pill">
+          <button data-val="real" id="setTableReal" class="active">Table réelle (sabot physique)</button>
+          <button data-val="robot" id="setTableRobot">Robot / en ligne (RNG)</button>
+        </div>
+      </div>
+      <div class="settings-item" id="decksSettingWrap">
+        <label>Nombre de paquets</label>
+        <select id="setDecks">
+          <option value="1">1 paquet</option>
+          <option value="2">2 paquets</option>
+          <option value="4">4 paquets</option>
+          <option value="6" selected>6 paquets</option>
+          <option value="8">8 paquets</option>
+        </select>
+      </div>
+      <div class="settings-item">
+        <label>Paiement Blackjack</label>
+        <select id="setPayout">
+          <option value="1.5" selected>3:2 (standard)</option>
+          <option value="1.2">6:5 (défavorable)</option>
+        </select>
+      </div>
+      <div class="settings-item">
+        <label>Règle du croupier</label>
+        <div class="toggle-pill">
+          <button data-val="0" id="setS17" class="active">S17 (reste)</button>
+          <button data-val="1" id="setH17">H17 (tire)</button>
+        </div>
+      </div>
+      <div class="settings-item">
+        <label>Double après split (DAS)</label>
+        <div class="toggle-pill">
+          <button data-val="1" id="setDasOn" class="active">Autorisé</button>
+          <button data-val="0" id="setDasOff">Interdit</button>
+        </div>
+      </div>
+    </div>
+    <div class="prob-note" id="robotNote" style="display:none;">Mode Robot/en ligne : chaque carte est tirée indépendamment (RNG, mélange continu) — pas de sabot qui se vide, donc pas de comptage de cartes possible. Le panneau de comptage et le nombre de paquets sont masqués, et les probabilités utilisent un tirage uniforme (équivalent à un sabot infini).</div>
+  </div>
+</div>
+
+<div class="tab-panel" data-tab="bankroll">
+  <div class="panel">
+    <h2>Gestion de bankroll</h2>
+    <div class="bankroll-row">
+      <div><label>Bankroll (€)</label><input type="number" id="bankroll" value="200"></div>
+      <div><label>Mise de base (€)</label><input type="number" id="miseBase" value="10"></div>
+    </div>
+    <div class="kelly-suggest" id="kellySuggest"></div>
+    <div class="hand-resolve">
+      <div class="hr-title">Situation de la mise :</div>
+      <div class="toggle-pill">
+        <button data-sit="simple" class="active" id="sitSimple">Mise simple</button>
+        <button data-sit="double" id="sitDouble">Doublée (x2)</button>
+        <button data-sit="split" id="sitSplit">Séparée (2 mains)</button>
+      </div>
+    </div>
+    <div id="resolveButtons"></div>
+    <div class="history" id="history"></div>
+  </div>
+</div>
+
+<div class="tab-panel" data-tab="training">
+  <div class="panel feature-panel training-overlay" id="trainingOverlay">
+    <div class="t-stats">
+      <div><b id="trainScore">0/0</b>score</div>
+      <div><b id="trainTimer">0s</b>temps</div>
+    </div>
+    <div class="t-cards">
+      <div class="group" id="trainPlayerCards"></div>
+      <div class="t-vs">vs</div>
+      <div class="group" id="trainDealerCard"></div>
+    </div>
+    <div class="t-actions" id="trainActions"></div>
+    <div class="t-feedback" id="trainFeedback"></div>
+    <button class="t-close" id="closeTraining">Recommencer la session</button>
+  </div>
+</div>
+
+<div class="tab-panel" data-tab="demo">
+  <div class="panel" style="position:relative;">
+    <button class="fullscreen-btn" id="demoFullscreenBtn" title="Plein écran">⛶ Plein écran</button>
+    <div class="demo-header">
+      <div class="demo-bankroll">Capital : <b id="demoBankrollVal">100.00€</b></div>
+    </div>
+    <div class="demo-table-wrap">
+      <div class="demo-dealer-row">
+        <span class="zone-label">♦ Croupier</span>
+        <div class="cards-row" id="demoDealerRow"><div class="empty-slot"></div></div>
+        <div class="zone-total" id="demoDealerTotal"></div>
+      </div>
+      <div class="demo-seatcount" id="demoSeatcountWrap">
+        <button id="demoSeatMinus">−</button>
+        <span id="demoSeatCountLabel">1 place</span>
+        <button id="demoSeatPlus">+</button>
+      </div>
+      <div class="demo-seats" id="demoSeatsRow"></div>
+    </div>
+    <div class="demo-hint" id="demoHint"></div>
+    <div class="demo-controls" id="demoControls"></div>
+    <div class="demo-log" id="demoLog"></div>
+  </div>
+</div>
+
+<div class="note">
+  Outil éducatif basé sur la stratégie de base mathématique (dépendante du total, pas de la composition exacte carte-par-carte — la stratégie "composition-dependent" parfaite ne change les choses que dans une poignée de cas extrêmement rares, pour un gain d'espérance négligeable, et demande un calcul combinatoire complet hors de portée d'un outil qui tourne en direct dans un navigateur). Le comptage et les déviations sont une sélection simplifiée des cas les plus utiles, pas la liste exhaustive et parfaitement précise des Illustrious 18. Joue toujours avec un budget que tu peux te permettre de perdre.
+</div>
+
+<script>
+// ================= Capteur d'erreur visible (diagnostic) =================
+// Certains environnements (aperçu d'artefact, iframe sandboxée) masquent le vrai message d'erreur
+// et n'affichent que "Script error." sans détail. Ce capteur tourne DANS la page elle-même, qui a
+// accès au vrai message même quand la fenêtre parente ne l'a pas — donc si quelque chose casse,
+// l'erreur réelle s'affiche ici, en bas de l'écran, au lieu de rester invisible.
+(function(){
+  function showFatalError(text){
+    try{
+      let box = document.getElementById('fatalErrorBox');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'fatalErrorBox';
+        box.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#3a0810;color:#ffd9de;font-size:11px;line-height:1.4;padding:8px 10px calc(8px + env(safe-area-inset-bottom, 0px)) 10px;z-index:999999;max-height:38vh;overflow:auto;white-space:pre-wrap;font-family:monospace;border-top:2px solid #ff6b7a;box-shadow:0 -4px 12px rgba(0,0,0,.4);';
+        (document.body||document.documentElement).appendChild(box);
+      }
+      const line = document.createElement('div');
+      line.style.marginBottom = '4px';
+      line.textContent = '⚠️ ' + text;
+      box.appendChild(line);
+    }catch(e){ /* si même l'affichage de l'erreur échoue, on abandonne silencieusement */ }
+  }
+  window.addEventListener('error', function(e){
+    const detail = (e.error && (e.error.stack || e.error.message)) || e.message || 'Erreur inconnue';
+    showFatalError(detail + (e.filename ? (' — ' + e.filename + ':' + e.lineno + ':' + e.colno) : ''));
+  });
+  window.addEventListener('unhandledrejection', function(e){
+    const reason = e.reason;
+    showFatalError('Promesse rejetée sans être gérée : ' + ((reason && (reason.stack || reason.message)) || reason));
+  });
+})();
+
+const RANKS = ['2','3','4','5','6','7','8','9','10','V','D','R','A'];
+
+const PROB_TABLE = {"S17":{"hard":{"5":{"2":{"s":[0.351,0,0.649],"h":[0.411,0.039,0.55],"d":[0.349,0,0.651]},"3":{"s":[0.382,0,0.618],"h":[0.433,0.038,0.529],"d":[0.375,0,0.625]},"4":{"s":[0.392,0,0.608],"h":[0.454,0.03,0.516],"d":[0.393,0,0.607]},"5":{"s":[0.417,0,0.583],"h":[0.476,0.029,0.494],"d":[0.415,0,0.585]},"6":{"s":[0.418,0,0.582],"h":[0.481,0.029,0.49],"d":[0.423,0,0.577]},"7":{"s":[0.258,0,0.742],"h":[0.393,0.088,0.519],"d":[0.261,0,0.739]},"8":{"s":[0.246,0,0.754],"h":[0.355,0.094,0.551],"d":[0.242,0,0.758]},"9":{"s":[0.225,0,0.775],"h":[0.323,0.088,0.589],"d":[0.227,0,0.773]},"10":{"s":[0.213,0,0.787],"h":[0.278,0.091,0.631],"d":[0.21,0,0.79]},"A":{"s":[0.118,0,0.882],"h":[0.215,0.102,0.683],"d":[0.113,0,0.887]}},"6":{"2":{"s":[0.357,0,0.643],"h":[0.413,0.037,0.55],"d":[0.358,0.011,0.631]},"3":{"s":[0.371,0,0.629],"h":[0.435,0.033,0.532],"d":[0.376,0.01,0.614]},"4":{"s":[0.397,0,0.603],"h":[0.447,0.029,0.525],"d":[0.392,0.011,0.597]},"5":{"s":[0.413,0,0.587],"h":[0.472,0.025,0.503],"d":[0.417,0.01,0.573]},"6":{"s":[0.425,0,0.575],"h":[0.478,0.028,0.495],"d":[0.418,0.014,0.569]},"7":{"s":[0.265,0,0.735],"h":[0.385,0.083,0.532],"d":[0.265,0.027,0.708]},"8":{"s":[0.246,0,0.754],"h":[0.345,0.087,0.568],"d":[0.246,0.008,0.747]},"9":{"s":[0.23,0,0.77],"h":[0.315,0.087,0.599],"d":[0.231,0.009,0.76]},"10":{"s":[0.213,0,0.787],"h":[0.263,0.087,0.651],"d":[0.211,0.008,0.781]},"A":{"s":[0.112,0,0.888],"h":[0.204,0.097,0.699],"d":[0.11,0.01,0.88]}},"7":{"2":{"s":[0.358,0,0.642],"h":[0.408,0.078,0.514],"d":[0.361,0.054,0.585]},"3":{"s":[0.369,0,0.631],"h":[0.428,0.072,0.5],"d":[0.383,0.051,0.566]},"4":{"s":[0.395,0,0.605],"h":[0.445,0.061,0.494],"d":[0.402,0.049,0.55]},"5":{"s":[0.417,0,0.583],"h":[0.462,0.057,0.481],"d":[0.425,0.048,0.527]},"6":{"s":[0.426,0,0.574],"h":[0.473,0.07,0.457],"d":[0.437,0.059,0.504]},"7":{"s":[0.261,0,0.739],"h":[0.381,0.175,0.444],"d":[0.289,0.127,0.584]},"8":{"s":[0.244,0,0.756],"h":[0.335,0.118,0.547],"d":[0.257,0.065,0.678]},"9":{"s":[0.22,0,0.78],"h":[0.304,0.103,0.593],"d":[0.234,0.048,0.718]},"10":{"s":[0.214,0,0.786],"h":[0.268,0.1,0.632],"d":[0.223,0.042,0.735]},"A":{"s":[0.116,0,0.884],"h":[0.193,0.11,0.697],"d":[0.127,0.051,0.822]}},"8":{"2":{"s":[0.356,0,0.644],"h":[0.451,0.078,0.47],"d":[0.42,0.061,0.519]},"3":{"s":[0.377,0,0.623],"h":[0.463,0.076,0.461],"d":[0.439,0.057,0.505]},"4":{"s":[0.397,0,0.603],"h":[0.491,0.069,0.44],"d":[0.451,0.056,0.493]},"5":{"s":[0.417,0,0.583],"h":[0.509,0.067,0.425],"d":[0.474,0.057,0.469]},"6":{"s":[0.416,0,0.584],"h":[0.526,0.063,0.411],"d":[0.492,0.054,0.454]},"7":{"s":[0.263,0,0.737],"h":[0.482,0.114,0.403],"d":[0.414,0.078,0.508]},"8":{"s":[0.246,0,0.754],"h":[0.381,0.171,0.448],"d":[0.323,0.131,0.547]},"9":{"s":[0.229,0,0.772],"h":[0.328,0.116,0.555],"d":[0.286,0.073,0.642]},"10":{"s":[0.209,0,0.791],"h":[0.304,0.1,0.595],"d":[0.264,0.051,0.684]},"A":{"s":[0.116,0,0.884],"h":[0.233,0.113,0.654],"d":[0.174,0.061,0.765]}},"9":{"2":{"s":[0.351,0,0.649],"h":[0.494,0.083,0.423],"d":[0.472,0.072,0.456]},"3":{"s":[0.374,0,0.626],"h":[0.511,0.079,0.41],"d":[0.497,0.069,0.434]},"4":{"s":[0.394,0,0.606],"h":[0.529,0.069,0.402],"d":[0.516,0.065,0.42]},"5":{"s":[0.414,0,0.586],"h":[0.546,0.07,0.385],"d":[0.525,0.064,0.411]},"6":{"s":[0.43,0,0.57],"h":[0.564,0.066,0.37],"d":[0.544,0.061,0.395]},"7":{"s":[0.264,0,0.736],"h":[0.536,0.1,0.363],"d":[0.494,0.07,0.435]},"8":{"s":[0.246,0,0.754],"h":[0.491,0.119,0.39],"d":[0.453,0.081,0.466]},"9":{"s":[0.227,0,0.773],"h":[0.385,0.17,0.444],"d":[0.356,0.136,0.508]},"10":{"s":[0.215,0,0.785],"h":[0.333,0.11,0.557],"d":[0.317,0.078,0.606]},"A":{"s":[0.119,0,0.881],"h":[0.278,0.117,0.605],"d":[0.229,0.07,0.702]}},"10":{"2":{"s":[0.352,0,0.648],"h":[0.55,0.081,0.369],"d":[0.549,0.077,0.374]},"3":{"s":[0.367,0,0.633],"h":[0.564,0.08,0.357],"d":[0.564,0.077,0.36]},"4":{"s":[0.394,0,0.606],"h":[0.577,0.071,0.352],"d":[0.574,0.074,0.352]},"5":{"s":[0.42,0,0.58],"h":[0.592,0.072,0.336],"d":[0.592,0.071,0.337]},"6":{"s":[0.422,0,0.578],"h":[0.609,0.071,0.32],"d":[0.606,0.071,0.323]},"7":{"s":[0.264,0,0.736],"h":[0.581,0.099,0.321],"d":[0.555,0.078,0.367]},"8":{"s":[0.246,0,0.754],"h":[0.547,0.102,0.35],"d":[0.533,0.075,0.392]},"9":{"s":[0.234,0,0.766],"h":[0.503,0.113,0.384],"d":[0.49,0.089,0.421]},"10":{"s":[0.212,0,0.788],"h":[0.402,0.164,0.434],"d":[0.398,0.139,0.463]},"A":{"s":[0.112,0,0.888],"h":[0.324,0.131,0.545],"d":[0.306,0.098,0.597]}},"11":{"2":{"s":[0.352,0,0.648],"h":[0.577,0.081,0.342],"d":[0.59,0.073,0.337]},"3":{"s":[0.37,0,0.63],"h":[0.59,0.079,0.332],"d":[0.589,0.075,0.336]},"4":{"s":[0.395,0,0.605],"h":[0.611,0.069,0.321],"d":[0.603,0.074,0.324]},"5":{"s":[0.413,0,0.587],"h":[0.619,0.069,0.312],"d":[0.622,0.068,0.311]},"6":{"s":[0.425,0,0.575],"h":[0.63,0.07,0.3],"d":[0.631,0.066,0.303]},"7":{"s":[0.262,0,0.738],"h":[0.6,0.099,0.301],"d":[0.576,0.077,0.347]},"8":{"s":[0.246,0,0.754],"h":[0.565,0.102,0.333],"d":[0.553,0.073,0.374]},"9":{"s":[0.233,0,0.767],"h":[0.531,0.101,0.368],"d":[0.519,0.071,0.41]},"10":{"s":[0.21,0,0.79],"h":[0.472,0.116,0.412],"d":[0.471,0.087,0.442]},"A":{"s":[0.115,0,0.885],"h":[0.357,0.179,0.464],"d":[0.337,0.152,0.511]}},"12":{"2":{"s":[0.354,0,0.646],"h":[0.345,0.049,0.607],"d":[0.348,0.049,0.603]},"3":{"s":[0.378,0,0.622],"h":[0.359,0.048,0.593],"d":[0.356,0.048,0.596]},"4":{"s":[0.39,0,0.61],"h":[0.402,0,0.598],"d":[0.371,0.046,0.583]},"5":{"s":[0.415,0,0.585],"h":[0.42,0,0.58],"d":[0.38,0.045,0.575]},"6":{"s":[0.425,0,0.575],"h":[0.418,0,0.582],"d":[0.397,0.044,0.56]},"7":{"s":[0.261,0,0.739],"h":[0.357,0.078,0.565],"d":[0.343,0.057,0.601]},"8":{"s":[0.247,0,0.753],"h":[0.327,0.078,0.595],"d":[0.32,0.057,0.622]},"9":{"s":[0.229,0,0.771],"h":[0.29,0.08,0.63],"d":[0.288,0.06,0.653]},"10":{"s":[0.214,0,0.786],"h":[0.245,0.079,0.676],"d":[0.245,0.063,0.692]},"A":{"s":[0.117,0,0.883],"h":[0.192,0.094,0.714],"d":[0.179,0.073,0.748]}},"13":{"2":{"s":[0.356,0,0.644],"h":[0.358,0,0.642],"d":[0.315,0.052,0.634]},"3":{"s":[0.375,0,0.625],"h":[0.378,0,0.623],"d":[0.335,0.05,0.615]},"4":{"s":[0.394,0,0.606],"h":[0.393,0,0.607],"d":[0.338,0.046,0.616]},"5":{"s":[0.42,0,0.58],"h":[0.412,0,0.588],"d":[0.35,0.047,0.604]},"6":{"s":[0.423,0,0.577],"h":[0.425,0,0.575],"d":[0.362,0.045,0.593]},"7":{"s":[0.263,0,0.737],"h":[0.331,0.07,0.599],"d":[0.32,0.054,0.626]},"8":{"s":[0.25,0,0.75],"h":[0.304,0.073,0.623],"d":[0.296,0.059,0.645]},"9":{"s":[0.226,0,0.774],"h":[0.268,0.077,0.655],"d":[0.271,0.058,0.671]},"10":{"s":[0.209,0,0.791],"h":[0.229,0.075,0.696],"d":[0.231,0.063,0.706]},"A":{"s":[0.115,0,0.885],"h":[0.176,0.082,0.742],"d":[0.171,0.067,0.762]}},"14":{"2":{"s":[0.353,0,0.647],"h":[0.352,0,0.648],"d":[0.298,0.048,0.655]},"3":{"s":[0.375,0,0.625],"h":[0.377,0,0.623],"d":[0.305,0.049,0.646]},"4":{"s":[0.39,0,0.61],"h":[0.396,0,0.604],"d":[0.312,0.048,0.64]},"5":{"s":[0.42,0,0.58],"h":[0.419,0,0.581],"d":[0.317,0.043,0.64]},"6":{"s":[0.426,0,0.574],"h":[0.421,0,0.579],"d":[0.322,0.048,0.63]},"7":{"s":[0.265,0,0.735],"h":[0.311,0.066,0.623],"d":[0.302,0.058,0.64]},"8":{"s":[0.245,0,0.755],"h":[0.277,0.064,0.66],"d":[0.282,0.062,0.656]},"9":{"s":[0.229,0,0.772],"h":[0.252,0.07,0.678],"d":[0.253,0.061,0.686]},"10":{"s":[0.209,0,0.791],"h":[0.219,0.07,0.712],"d":[0.217,0.062,0.721]},"A":{"s":[0.115,0,0.885],"h":[0.168,0.079,0.754],"d":[0.165,0.067,0.768]}},"15":{"2":{"s":[0.353,0,0.647],"h":[0.352,0,0.648],"d":[0.274,0.048,0.678]},"3":{"s":[0.371,0,0.629],"h":[0.372,0,0.628],"d":[0.278,0.051,0.67]},"4":{"s":[0.392,0,0.608],"h":[0.397,0,0.603],"d":[0.274,0.047,0.679]},"5":{"s":[0.418,0,0.582],"h":[0.415,0,0.585],"d":[0.291,0.045,0.663]},"6":{"s":[0.429,0,0.571],"h":[0.42,0,0.58],"d":[0.294,0.046,0.66]},"7":{"s":[0.262,0,0.739],"h":[0.285,0.062,0.654],"d":[0.286,0.056,0.658]},"8":{"s":[0.25,0,0.75],"h":[0.259,0.062,0.679],"d":[0.265,0.058,0.678]},"9":{"s":[0.23,0,0.77],"h":[0.228,0.062,0.71],"d":[0.234,0.06,0.706]},"10":{"s":[0.212,0,0.788],"h":[0.2,0.065,0.735],"d":[0.2,0.06,0.739]},"A":{"s":[0.111,0,0.889],"h":[0.156,0.073,0.771],"d":[0.149,0.069,0.782]}},"16":{"2":{"s":[0.353,0,0.647],"h":[0.354,0,0.646],"d":[0.237,0.048,0.715]},"3":{"s":[0.372,0,0.628],"h":[0.37,0,0.63],"d":[0.249,0.047,0.704]},"4":{"s":[0.394,0,0.606],"h":[0.388,0,0.612],"d":[0.247,0.047,0.706]},"5":{"s":[0.416,0,0.584],"h":[0.42,0,0.581],"d":[0.252,0.044,0.704]},"6":{"s":[0.418,0,0.582],"h":[0.423,0,0.577],"d":[0.266,0.044,0.69]},"7":{"s":[0.265,0,0.735],"h":[0.265,0.06,0.676],"d":[0.268,0.06,0.672]},"8":{"s":[0.249,0,0.751],"h":[0.242,0.06,0.698],"d":[0.246,0.06,0.694]},"9":{"s":[0.225,0,0.775],"h":[0.218,0.056,0.726],"d":[0.216,0.059,0.725]},"10":{"s":[0.212,0,0.788],"h":[0.19,0.06,0.75],"d":[0.183,0.061,0.756]},"A":{"s":[0.116,0,0.884],"h":[0.145,0.069,0.786],"d":[0.146,0.067,0.787]}},"17":{"2":{"s":[0.348,0.142,0.511],"h":[0.36,0.14,0.5],"d":[0.214,0.038,0.748]},"3":{"s":[0.375,0.136,0.489],"h":[0.375,0.134,0.491],"d":[0.219,0.034,0.747]},"4":{"s":[0.393,0.132,0.475],"h":[0.396,0.129,0.475],"d":[0.215,0.039,0.746]},"5":{"s":[0.413,0.126,0.461],"h":[0.419,0.125,0.456],"d":[0.221,0.035,0.744]},"6":{"s":[0.421,0.169,0.41],"h":[0.42,0.165,0.415],"d":[0.229,0.033,0.738]},"7":{"s":[0.263,0.373,0.365],"h":[0.262,0.365,0.373],"d":[0.246,0.027,0.727]},"8":{"s":[0.25,0.127,0.623],"h":[0.246,0.129,0.625],"d":[0.219,0.051,0.73]},"9":{"s":[0.225,0.119,0.656],"h":[0.227,0.118,0.655],"d":[0.202,0.053,0.746]},"10":{"s":[0.215,0.115,0.67],"h":[0.212,0.109,0.679],"d":[0.167,0.05,0.782]},"A":{"s":[0.115,0.131,0.754],"h":[0.117,0.13,0.753],"d":[0.14,0.057,0.803]}},"18":{"2":{"s":[0.492,0.138,0.37],"h":[0.488,0.137,0.375],"d":[0.169,0.027,0.803]},"3":{"s":[0.511,0.13,0.359],"h":[0.504,0.133,0.363],"d":[0.178,0.028,0.794]},"4":{"s":[0.521,0.13,0.349],"h":[0.523,0.127,0.35],"d":[0.18,0.027,0.794]},"5":{"s":[0.537,0.125,0.338],"h":[0.539,0.123,0.338],"d":[0.185,0.026,0.789]},"6":{"s":[0.586,0.106,0.308],"h":[0.591,0.1,0.31],"d":[0.187,0.025,0.788]},"7":{"s":[0.636,0.137,0.226],"h":[0.632,0.139,0.23],"d":[0.199,0.018,0.783]},"8":{"s":[0.37,0.359,0.271],"h":[0.377,0.354,0.269],"d":[0.193,0.02,0.787]},"9":{"s":[0.342,0.119,0.539],"h":[0.346,0.12,0.534],"d":[0.172,0.04,0.788]},"10":{"s":[0.321,0.11,0.569],"h":[0.324,0.112,0.564],"d":[0.142,0.045,0.813]},"A":{"s":[0.249,0.132,0.619],"h":[0.246,0.131,0.623],"d":[0.117,0.047,0.835]}},"19":{"2":{"s":[0.629,0.132,0.24],"h":[0.626,0.128,0.246],"d":[0.129,0.019,0.853]},"3":{"s":[0.639,0.124,0.237],"h":[0.64,0.128,0.232],"d":[0.128,0.018,0.854]},"4":{"s":[0.652,0.123,0.225],"h":[0.646,0.122,0.232],"d":[0.125,0.017,0.858]},"5":{"s":[0.658,0.118,0.224],"h":[0.661,0.117,0.223],"d":[0.13,0.018,0.852]},"6":{"s":[0.699,0.1,0.201],"h":[0.692,0.105,0.203],"d":[0.13,0.014,0.856]},"7":{"s":[0.764,0.078,0.158],"h":[0.767,0.081,0.152],"d":[0.138,0.011,0.851]},"8":{"s":[0.735,0.128,0.138],"h":[0.734,0.13,0.136],"d":[0.142,0.011,0.847]},"9":{"s":[0.466,0.356,0.179],"h":[0.471,0.35,0.179],"d":[0.138,0.014,0.848]},"10":{"s":[0.428,0.116,0.456],"h":[0.429,0.114,0.457],"d":[0.109,0.033,0.858]},"A":{"s":[0.375,0.13,0.496],"h":[0.38,0.132,0.488],"d":[0.086,0.038,0.876]}},"20":{"2":{"s":[0.754,0.125,0.121],"h":[0.76,0.121,0.12],"d":[0.068,0.008,0.923]},"3":{"s":[0.772,0.115,0.113],"h":[0.762,0.121,0.117],"d":[0.068,0.008,0.924]},"4":{"s":[0.771,0.116,0.113],"h":[0.775,0.114,0.111],"d":[0.07,0.008,0.922]},"5":{"s":[0.775,0.115,0.11],"h":[0.783,0.111,0.106],"d":[0.067,0.008,0.924]},"6":{"s":[0.797,0.104,0.099],"h":[0.798,0.104,0.098],"d":[0.071,0.008,0.921]},"7":{"s":[0.849,0.078,0.073],"h":[0.845,0.077,0.078],"d":[0.071,0.005,0.924]},"8":{"s":[0.862,0.069,0.069],"h":[0.859,0.07,0.071],"d":[0.07,0.005,0.925]},"9":{"s":[0.815,0.121,0.064],"h":[0.815,0.121,0.065],"d":[0.07,0.005,0.925]},"10":{"s":[0.55,0.339,0.111],"h":[0.546,0.343,0.111],"d":[0.07,0.009,0.921]},"A":{"s":[0.502,0.135,0.363],"h":[0.511,0.131,0.358],"d":[0.047,0.027,0.926]}}},"soft":{"13":{"2":{"s":[0.355,0,0.645],"h":[0.497,0.061,0.442],"d":[0.458,0.051,0.492]},"3":{"s":[0.37,0,0.63],"h":[0.502,0.056,0.442],"d":[0.473,0.048,0.479]},"4":{"s":[0.398,0,0.602],"h":[0.525,0.049,0.426],"d":[0.495,0.047,0.459]},"5":{"s":[0.413,0,0.587],"h":[0.544,0.045,0.411],"d":[0.513,0.042,0.445]},"6":{"s":[0.424,0,0.576],"h":[0.558,0.045,0.398],"d":[0.53,0.043,0.427]},"7":{"s":[0.263,0,0.737],"h":[0.517,0.086,0.397],"d":[0.425,0.057,0.518]},"8":{"s":[0.241,0,0.759],"h":[0.47,0.106,0.424],"d":[0.394,0.059,0.547]},"9":{"s":[0.23,0,0.77],"h":[0.428,0.112,0.46],"d":[0.359,0.057,0.584]},"10":{"s":[0.211,0,0.789],"h":[0.363,0.114,0.523],"d":[0.312,0.059,0.629]},"A":{"s":[0.116,0,0.884],"h":[0.285,0.132,0.583],"d":[0.218,0.068,0.714]}},"14":{"2":{"s":[0.353,0,0.647],"h":[0.477,0.059,0.464],"d":[0.456,0.049,0.496]},"3":{"s":[0.37,0,0.63],"h":[0.507,0.05,0.443],"d":[0.475,0.046,0.48]},"4":{"s":[0.402,0,0.598],"h":[0.516,0.045,0.439],"d":[0.493,0.044,0.463]},"5":{"s":[0.417,0,0.583],"h":[0.539,0.045,0.417],"d":[0.508,0.046,0.446]},"6":{"s":[0.42,0,0.58],"h":[0.554,0.041,0.405],"d":[0.524,0.042,0.434]},"7":{"s":[0.258,0,0.742],"h":[0.503,0.082,0.415],"d":[0.434,0.056,0.511]},"8":{"s":[0.24,0,0.76],"h":[0.452,0.105,0.444],"d":[0.388,0.061,0.551]},"9":{"s":[0.228,0,0.772],"h":[0.41,0.105,0.485],"d":[0.352,0.064,0.584]},"10":{"s":[0.215,0,0.785],"h":[0.345,0.114,0.541],"d":[0.311,0.061,0.628]},"A":{"s":[0.119,0,0.881],"h":[0.277,0.119,0.604],"d":[0.21,0.07,0.72]}},"15":{"2":{"s":[0.357,0,0.643],"h":[0.475,0.055,0.47],"d":[0.464,0.05,0.486]},"3":{"s":[0.375,0,0.625],"h":[0.483,0.048,0.469],"d":[0.479,0.047,0.474]},"4":{"s":[0.395,0,0.605],"h":[0.509,0.04,0.451],"d":[0.489,0.047,0.464]},"5":{"s":[0.414,0,0.586],"h":[0.526,0.042,0.432],"d":[0.508,0.042,0.45]},"6":{"s":[0.422,0,0.578],"h":[0.541,0.036,0.423],"d":[0.521,0.046,0.433]},"7":{"s":[0.26,0,0.74],"h":[0.476,0.082,0.442],"d":[0.427,0.056,0.516]},"8":{"s":[0.241,0,0.759],"h":[0.437,0.097,0.466],"d":[0.397,0.056,0.548]},"9":{"s":[0.23,0,0.77],"h":[0.395,0.105,0.5],"d":[0.351,0.059,0.591]},"10":{"s":[0.211,0,0.789],"h":[0.336,0.108,0.557],"d":[0.31,0.061,0.63]},"A":{"s":[0.116,0,0.884],"h":[0.262,0.118,0.62],"d":[0.211,0.069,0.72]}},"16":{"2":{"s":[0.348,0,0.652],"h":[0.472,0.05,0.479],"d":[0.46,0.048,0.492]},"3":{"s":[0.374,0,0.626],"h":[0.483,0.042,0.474],"d":[0.474,0.045,0.481]},"4":{"s":[0.388,0,0.612],"h":[0.502,0.037,0.461],"d":[0.488,0.047,0.466]},"5":{"s":[0.414,0,0.586],"h":[0.521,0.036,0.443],"d":[0.51,0.043,0.447]},"6":{"s":[0.426,0,0.574],"h":[0.53,0.033,0.437],"d":[0.522,0.045,0.432]},"7":{"s":[0.26,0,0.74],"h":[0.454,0.082,0.465],"d":[0.422,0.057,0.522]},"8":{"s":[0.241,0,0.759],"h":[0.422,0.094,0.484],"d":[0.39,0.057,0.553]},"9":{"s":[0.225,0,0.775],"h":[0.375,0.101,0.525],"d":[0.362,0.063,0.576]},"10":{"s":[0.215,0,0.785],"h":[0.321,0.102,0.577],"d":[0.312,0.059,0.63]},"A":{"s":[0.112,0,0.888],"h":[0.252,0.112,0.637],"d":[0.214,0.07,0.717]}},"17":{"2":{"s":[0.359,0.143,0.498],"h":[0.457,0.084,0.459],"d":[0.461,0.081,0.458]},"3":{"s":[0.376,0.132,0.492],"h":[0.474,0.079,0.447],"d":[0.474,0.082,0.444]},"4":{"s":[0.394,0.13,0.476],"h":[0.487,0.074,0.439],"d":[0.488,0.081,0.432]},"5":{"s":[0.417,0.124,0.459],"h":[0.511,0.069,0.42],"d":[0.51,0.074,0.416]},"6":{"s":[0.428,0.161,0.411],"h":[0.52,0.078,0.402],"d":[0.521,0.081,0.398]},"7":{"s":[0.259,0.371,0.37],"h":[0.441,0.166,0.393],"d":[0.429,0.141,0.43]},"8":{"s":[0.247,0.129,0.624],"h":[0.407,0.113,0.48],"d":[0.394,0.088,0.518]},"9":{"s":[0.229,0.117,0.654],"h":[0.371,0.114,0.515],"d":[0.358,0.085,0.557]},"10":{"s":[0.21,0.111,0.68],"h":[0.321,0.112,0.567],"d":[0.32,0.084,0.597]},"A":{"s":[0.115,0.127,0.758],"h":[0.241,0.128,0.631],"d":[0.214,0.099,0.687]}},"18":{"2":{"s":[0.494,0.134,0.372],"h":[0.489,0.135,0.376],"d":[0.491,0.083,0.426]},"3":{"s":[0.51,0.13,0.36],"h":[0.506,0.08,0.413],"d":[0.508,0.078,0.414]},"4":{"s":[0.527,0.13,0.343],"h":[0.519,0.074,0.407],"d":[0.518,0.076,0.407]},"5":{"s":[0.53,0.125,0.345],"h":[0.544,0.075,0.381],"d":[0.542,0.069,0.389]},"6":{"s":[0.585,0.106,0.309],"h":[0.561,0.07,0.37],"d":[0.557,0.068,0.375]},"7":{"s":[0.629,0.137,0.234],"h":[0.634,0.135,0.231],"d":[0.514,0.092,0.394]},"8":{"s":[0.375,0.356,0.27],"h":[0.373,0.358,0.269],"d":[0.421,0.142,0.437]},"9":{"s":[0.346,0.118,0.537],"h":[0.389,0.11,0.501],"d":[0.388,0.088,0.524]},"10":{"s":[0.32,0.115,0.564],"h":[0.347,0.113,0.54],"d":[0.336,0.086,0.578]},"A":{"s":[0.245,0.129,0.625],"h":[0.269,0.131,0.601],"d":[0.244,0.097,0.659]}},"19":{"2":{"s":[0.632,0.13,0.238],"h":[0.631,0.132,0.237],"d":[0.518,0.077,0.405]},"3":{"s":[0.644,0.119,0.237],"h":[0.633,0.127,0.24],"d":[0.532,0.08,0.388]},"4":{"s":[0.65,0.12,0.23],"h":[0.653,0.123,0.224],"d":[0.55,0.075,0.374]},"5":{"s":[0.664,0.115,0.221],"h":[0.664,0.118,0.218],"d":[0.572,0.071,0.357]},"6":{"s":[0.694,0.109,0.197],"h":[0.698,0.102,0.2],"d":[0.586,0.067,0.348]},"7":{"s":[0.77,0.08,0.15],"h":[0.772,0.076,0.152],"d":[0.551,0.074,0.376]},"8":{"s":[0.726,0.136,0.139],"h":[0.727,0.133,0.14],"d":[0.504,0.09,0.406]},"9":{"s":[0.466,0.349,0.185],"h":[0.46,0.354,0.186],"d":[0.414,0.14,0.446]},"10":{"s":[0.439,0.11,0.451],"h":[0.434,0.117,0.449],"d":[0.364,0.085,0.551]},"A":{"s":[0.377,0.134,0.489],"h":[0.378,0.132,0.49],"d":[0.279,0.101,0.621]}},"20":{"2":{"s":[0.76,0.124,0.116],"h":[0.756,0.125,0.119],"d":[0.555,0.078,0.367]},"3":{"s":[0.761,0.12,0.119],"h":[0.756,0.124,0.12],"d":[0.571,0.073,0.356]},"4":{"s":[0.768,0.118,0.114],"h":[0.77,0.117,0.113],"d":[0.581,0.075,0.344]},"5":{"s":[0.775,0.115,0.11],"h":[0.782,0.112,0.107],"d":[0.594,0.071,0.334]},"6":{"s":[0.799,0.103,0.099],"h":[0.802,0.1,0.098],"d":[0.608,0.065,0.328]},"7":{"s":[0.849,0.076,0.076],"h":[0.846,0.079,0.075],"d":[0.563,0.074,0.363]},"8":{"s":[0.858,0.072,0.071],"h":[0.862,0.07,0.068],"d":[0.537,0.073,0.39]},"9":{"s":[0.814,0.125,0.061],"h":[0.817,0.124,0.059],"d":[0.491,0.09,0.419]},"10":{"s":[0.557,0.335,0.107],"h":[0.547,0.339,0.114],"d":[0.399,0.138,0.463]},"A":{"s":[0.512,0.127,0.361],"h":[0.505,0.13,0.365],"d":[0.308,0.095,0.597]}}},"pair":{"2":{"2":{"s":[0.353,0,0.647],"h":[0.42,0.042,0.538],"d":[0.359,0,0.641],"sp":[0.296,0.343,0.361,-0.193]},"3":{"s":[0.376,0,0.624],"h":[0.435,0.04,0.524],"d":[0.383,0,0.617],"sp":[0.32,0.329,0.351,-0.121]},"4":{"s":[0.388,0,0.612],"h":[0.458,0.029,0.513],"d":[0.392,0,0.609],"sp":[0.409,0.187,0.404,-0.04]},"5":{"s":[0.419,0,0.581],"h":[0.481,0.031,0.488],"d":[0.419,0,0.582],"sp":[0.43,0.179,0.391,0.031]},"6":{"s":[0.422,0,0.578],"h":[0.488,0.032,0.48],"d":[0.423,0,0.577],"sp":[0.437,0.186,0.377,0.072]},"7":{"s":[0.257,0,0.743],"h":[0.409,0.093,0.498],"d":[0.267,0,0.734],"sp":[0.232,0.521,0.247,-0.052]},"8":{"s":[0.241,0,0.759],"h":[0.367,0.092,0.542],"d":[0.247,0,0.753],"sp":[0.192,0.532,0.275,-0.214]},"9":{"s":[0.23,0,0.77],"h":[0.335,0.095,0.57],"d":[0.231,0,0.769],"sp":[0.166,0.509,0.326,-0.383]},"10":{"s":[0.214,0,0.787],"h":[0.282,0.095,0.622],"d":[0.213,0,0.787],"sp":[0.146,0.463,0.391,-0.578]},"A":{"s":[0.113,0,0.887],"h":[0.223,0.104,0.673],"d":[0.114,0,0.886],"sp":[0.107,0.432,0.461,-0.817]}},"3":{"2":{"s":[0.355,0,0.645],"h":[0.416,0.036,0.548],"d":[0.356,0.01,0.633],"sp":[0.34,0.242,0.418,-0.212]},"3":{"s":[0.378,0,0.622],"h":[0.428,0.034,0.537],"d":[0.372,0.01,0.618],"sp":[0.361,0.237,0.403,-0.14]},"4":{"s":[0.398,0,0.602],"h":[0.449,0.027,0.523],"d":[0.394,0.01,0.596],"sp":[0.405,0.173,0.422,-0.079]},"5":{"s":[0.415,0,0.585],"h":[0.47,0.028,0.502],"d":[0.417,0.009,0.574],"sp":[0.428,0.162,0.41,-0.012]},"6":{"s":[0.429,0,0.571],"h":[0.475,0.027,0.498],"d":[0.424,0.012,0.564],"sp":[0.44,0.169,0.391,0.057]},"7":{"s":[0.26,0,0.74],"h":[0.386,0.081,0.533],"d":[0.267,0.029,0.704],"sp":[0.217,0.528,0.255,-0.11]},"8":{"s":[0.24,0,0.76],"h":[0.353,0.084,0.562],"d":[0.244,0.011,0.745],"sp":[0.185,0.527,0.288,-0.257]},"9":{"s":[0.231,0,0.769],"h":[0.317,0.088,0.595],"d":[0.23,0.01,0.761],"sp":[0.156,0.505,0.339,-0.433]},"10":{"s":[0.216,0,0.784],"h":[0.271,0.085,0.644],"d":[0.213,0.009,0.778],"sp":[0.14,0.462,0.398,-0.607]},"A":{"s":[0.111,0,0.889],"h":[0.208,0.095,0.697],"d":[0.117,0.011,0.872],"sp":[0.103,0.415,0.482,-0.86]}},"4":{"2":{"s":[0.362,0,0.638],"h":[0.449,0.078,0.473],"d":[0.411,0.061,0.528],"sp":[0.338,0.231,0.431,-0.24]},"3":{"s":[0.373,0,0.627],"h":[0.463,0.074,0.463],"d":[0.435,0.061,0.504],"sp":[0.363,0.218,0.419,-0.168]},"4":{"s":[0.394,0,0.606],"h":[0.49,0.07,0.44],"d":[0.458,0.055,0.487],"sp":[0.412,0.163,0.426,-0.074]},"5":{"s":[0.418,0,0.582],"h":[0.504,0.065,0.43],"d":[0.471,0.056,0.472],"sp":[0.424,0.16,0.417,-0.034]},"6":{"s":[0.424,0,0.576],"h":[0.525,0.064,0.411],"d":[0.491,0.054,0.456],"sp":[0.425,0.168,0.407,-0.011]},"7":{"s":[0.267,0,0.733],"h":[0.484,0.118,0.399],"d":[0.419,0.077,0.503],"sp":[0.202,0.524,0.274,-0.182]},"8":{"s":[0.248,0,0.752],"h":[0.382,0.175,0.444],"d":[0.319,0.135,0.546],"sp":[0.168,0.528,0.305,-0.323]},"9":{"s":[0.227,0,0.773],"h":[0.336,0.115,0.549],"d":[0.282,0.076,0.642],"sp":[0.143,0.503,0.354,-0.488]},"10":{"s":[0.212,0,0.788],"h":[0.291,0.1,0.609],"d":[0.264,0.052,0.684],"sp":[0.123,0.45,0.427,-0.698]},"A":{"s":[0.116,0,0.885],"h":[0.231,0.119,0.649],"d":[0.176,0.062,0.762],"sp":[0.096,0.409,0.495,-0.906]}},"5":{"2":{"s":[0.351,0,0.649],"h":[0.549,0.082,0.369],"d":[0.547,0.082,0.371],"sp":[0.343,0.216,0.441,-0.25]},"3":{"s":[0.374,0,0.626],"h":[0.565,0.079,0.356],"d":[0.563,0.075,0.362],"sp":[0.357,0.215,0.428,-0.193]},"4":{"s":[0.396,0,0.604],"h":[0.576,0.075,0.349],"d":[0.581,0.071,0.348],"sp":[0.402,0.154,0.445,-0.13]},"5":{"s":[0.422,0,0.578],"h":[0.585,0.075,0.34],"d":[0.591,0.07,0.339],"sp":[0.418,0.151,0.431,-0.07]},"6":{"s":[0.423,0,0.577],"h":[0.604,0.066,0.33],"d":[0.611,0.067,0.322],"sp":[0.432,0.152,0.416,-0.008]},"7":{"s":[0.262,0,0.738],"h":[0.582,0.097,0.32],"d":[0.561,0.078,0.361],"sp":[0.19,0.525,0.285,-0.22]},"8":{"s":[0.248,0,0.752],"h":[0.551,0.099,0.35],"d":[0.536,0.074,0.39],"sp":[0.16,0.516,0.324,-0.386]},"9":{"s":[0.226,0,0.774],"h":[0.496,0.116,0.387],"d":[0.496,0.086,0.418],"sp":[0.136,0.497,0.367,-0.523]},"10":{"s":[0.21,0,0.791],"h":[0.393,0.162,0.444],"d":[0.393,0.139,0.468],"sp":[0.117,0.447,0.436,-0.726]},"A":{"s":[0.109,0,0.891],"h":[0.325,0.129,0.546],"d":[0.312,0.098,0.59],"sp":[0.091,0.408,0.501,-0.928]}},"6":{"2":{"s":[0.353,0,0.647],"h":[0.351,0.048,0.601],"d":[0.349,0.05,0.601],"sp":[0.345,0.2,0.455,-0.27]},"3":{"s":[0.369,0,0.631],"h":[0.354,0.047,0.599],"d":[0.354,0.048,0.598],"sp":[0.359,0.194,0.448,-0.228]},"4":{"s":[0.395,0,0.605],"h":[0.373,0.045,0.582],"d":[0.375,0.045,0.58],"sp":[0.386,0.175,0.439,-0.152]},"5":{"s":[0.416,0,0.584],"h":[0.38,0.045,0.575],"d":[0.383,0.047,0.571],"sp":[0.409,0.173,0.418,-0.059]},"6":{"s":[0.422,0,0.578],"h":[0.396,0.046,0.558],"d":[0.393,0.046,0.561],"sp":[0.41,0.175,0.415,-0.048]},"7":{"s":[0.268,0,0.732],"h":[0.354,0.078,0.568],"d":[0.349,0.056,0.595],"sp":[0.177,0.519,0.304,-0.292]},"8":{"s":[0.242,0,0.758],"h":[0.324,0.077,0.599],"d":[0.317,0.058,0.625],"sp":[0.149,0.514,0.338,-0.433]},"9":{"s":[0.23,0,0.77],"h":[0.288,0.079,0.633],"d":[0.288,0.061,0.651],"sp":[0.125,0.493,0.381,-0.584]},"10":{"s":[0.212,0,0.789],"h":[0.249,0.083,0.669],"d":[0.249,0.062,0.689],"sp":[0.114,0.443,0.444,-0.748]},"A":{"s":[0.115,0,0.885],"h":[0.194,0.092,0.714],"d":[0.186,0.068,0.746],"sp":[0.086,0.408,0.506,-0.952]}},"7":{"2":{"s":[0.355,0,0.645],"h":[0.298,0.048,0.653],"d":[0.289,0.05,0.661],"sp":[0.324,0.268,0.407,-0.228]},"3":{"s":[0.377,0,0.623],"h":[0.304,0.047,0.648],"d":[0.307,0.047,0.646],"sp":[0.342,0.264,0.395,-0.171]},"4":{"s":[0.397,0,0.603],"h":[0.314,0.047,0.639],"d":[0.308,0.048,0.644],"sp":[0.37,0.226,0.404,-0.131]},"5":{"s":[0.413,0,0.587],"h":[0.315,0.049,0.637],"d":[0.322,0.045,0.634],"sp":[0.401,0.211,0.389,-0.033]},"6":{"s":[0.425,0,0.575],"h":[0.332,0.042,0.625],"d":[0.323,0.043,0.634],"sp":[0.401,0.241,0.358,0.023]},"7":{"s":[0.261,0,0.739],"h":[0.31,0.064,0.627],"d":[0.305,0.053,0.642],"sp":[0.205,0.532,0.263,-0.126]},"8":{"s":[0.245,0,0.755],"h":[0.281,0.067,0.652],"d":[0.276,0.06,0.664],"sp":[0.172,0.474,0.354,-0.42]},"9":{"s":[0.229,0,0.771],"h":[0.251,0.068,0.681],"d":[0.247,0.06,0.693],"sp":[0.151,0.45,0.399,-0.56]},"10":{"s":[0.21,0,0.79],"h":[0.214,0.068,0.719],"d":[0.221,0.06,0.719],"sp":[0.139,0.397,0.464,-0.721]},"A":{"s":[0.122,0,0.878],"h":[0.167,0.079,0.754],"d":[0.166,0.069,0.766],"sp":[0.089,0.365,0.546,-1.002]}},"8":{"2":{"s":[0.357,0,0.643],"h":[0.24,0.049,0.712],"d":[0.241,0.048,0.711],"sp":[0.344,0.3,0.356,-0.082]},"3":{"s":[0.369,0,0.631],"h":[0.241,0.047,0.712],"d":[0.241,0.047,0.712],"sp":[0.368,0.296,0.336,0.004]},"4":{"s":[0.394,0,0.606],"h":[0.246,0.048,0.706],"d":[0.25,0.048,0.702],"sp":[0.392,0.266,0.342,0.038]},"5":{"s":[0.409,0,0.591],"h":[0.254,0.044,0.702],"d":[0.249,0.045,0.706],"sp":[0.419,0.251,0.331,0.116]},"6":{"s":[0.426,0,0.574],"h":[0.261,0.044,0.695],"d":[0.263,0.043,0.694],"sp":[0.426,0.255,0.318,0.172]},"7":{"s":[0.263,0,0.737],"h":[0.265,0.058,0.677],"d":[0.266,0.056,0.678],"sp":[0.303,0.474,0.223,0.156]},"8":{"s":[0.243,0,0.757],"h":[0.243,0.061,0.696],"d":[0.244,0.059,0.696],"sp":[0.216,0.533,0.25,-0.115]},"9":{"s":[0.231,0,0.769],"h":[0.215,0.061,0.724],"d":[0.211,0.056,0.733],"sp":[0.193,0.437,0.37,-0.425]},"10":{"s":[0.208,0,0.792],"h":[0.187,0.063,0.75],"d":[0.187,0.058,0.755],"sp":[0.175,0.373,0.451,-0.618]},"A":{"s":[0.115,0,0.885],"h":[0.15,0.065,0.785],"d":[0.147,0.066,0.787],"sp":[0.13,0.353,0.517,-0.855]}},"9":{"2":{"s":[0.495,0.134,0.371],"h":[0.173,0.029,0.798],"d":[0.175,0.03,0.796],"sp":[0.357,0.336,0.307,0.037]},"3":{"s":[0.516,0.128,0.356],"h":[0.177,0.03,0.793],"d":[0.177,0.029,0.794],"sp":[0.373,0.328,0.299,0.085]},"4":{"s":[0.533,0.124,0.343],"h":[0.174,0.027,0.799],"d":[0.174,0.027,0.799],"sp":[0.404,0.294,0.302,0.148]},"5":{"s":[0.545,0.12,0.335],"h":[0.181,0.023,0.797],"d":[0.182,0.024,0.794],"sp":[0.41,0.296,0.294,0.173]},"6":{"s":[0.597,0.105,0.299],"h":[0.182,0.024,0.794],"d":[0.184,0.022,0.794],"sp":[0.427,0.3,0.273,0.254]},"7":{"s":[0.632,0.141,0.227],"h":[0.629,0.138,0.233],"d":[0.197,0.018,0.786],"sp":[0.351,0.468,0.182,0.345]},"8":{"s":[0.376,0.351,0.273],"h":[0.194,0.02,0.786],"d":[0.193,0.02,0.787],"sp":[0.284,0.499,0.218,0.099]},"9":{"s":[0.355,0.119,0.526],"h":[0.168,0.043,0.789],"d":[0.177,0.04,0.783],"sp":[0.209,0.547,0.245,-0.158]},"10":{"s":[0.324,0.111,0.565],"h":[0.32,0.111,0.569],"d":[0.143,0.044,0.812],"sp":[0.208,0.409,0.384,-0.433]},"A":{"s":[0.244,0.129,0.627],"h":[0.249,0.132,0.619],"d":[0.12,0.049,0.831],"sp":[0.167,0.369,0.464,-0.666]}},"10":{"2":{"s":[0.759,0.121,0.12],"h":[0.76,0.124,0.117],"d":[0.065,0.01,0.926],"sp":[0.433,0.336,0.232,0.347]},"3":{"s":[0.766,0.119,0.114],"h":[0.765,0.122,0.113],"d":[0.068,0.008,0.923],"sp":[0.451,0.33,0.219,0.41]},"4":{"s":[0.77,0.12,0.11],"h":[0.769,0.117,0.114],"d":[0.065,0.007,0.927],"sp":[0.479,0.304,0.217,0.47]},"5":{"s":[0.777,0.116,0.107],"h":[0.775,0.114,0.111],"d":[0.073,0.008,0.919],"sp":[0.494,0.293,0.213,0.511]},"6":{"s":[0.804,0.1,0.096],"h":[0.8,0.105,0.095],"d":[0.067,0.007,0.926],"sp":[0.505,0.29,0.205,0.553]},"7":{"s":[0.846,0.079,0.075],"h":[0.845,0.081,0.075],"d":[0.071,0.006,0.923],"sp":[0.391,0.469,0.14,0.511]},"8":{"s":[0.856,0.073,0.071],"h":[0.862,0.068,0.071],"d":[0.075,0.005,0.92],"sp":[0.356,0.488,0.156,0.397]},"9":{"s":[0.819,0.12,0.061],"h":[0.818,0.12,0.062],"d":[0.073,0.005,0.922],"sp":[0.311,0.514,0.176,0.245]},"10":{"s":[0.542,0.348,0.11],"h":[0.551,0.338,0.111],"d":[0.068,0.008,0.924],"sp":[0.243,0.52,0.238,-0.099]},"A":{"s":[0.507,0.132,0.361],"h":[0.513,0.131,0.356],"d":[0.049,0.029,0.921],"sp":[0.204,0.425,0.371,-0.416]}},"A":{"2":{"s":[0.348,0,0.652],"h":[0.501,0.076,0.423],"d":[0.463,0.047,0.49],"sp":[0.458,0.349,0.193,0.473]},"3":{"s":[0.369,0,0.631],"h":[0.507,0.07,0.423],"d":[0.465,0.051,0.484],"sp":[0.469,0.344,0.188,0.509]},"4":{"s":[0.398,0,0.602],"h":[0.536,0.052,0.411],"d":[0.495,0.049,0.457],"sp":[0.49,0.331,0.179,0.568]},"5":{"s":[0.416,0,0.584],"h":[0.554,0.049,0.398],"d":[0.504,0.046,0.449],"sp":[0.506,0.318,0.176,0.611]},"6":{"s":[0.428,0,0.572],"h":[0.57,0.046,0.384],"d":[0.523,0.043,0.434],"sp":[0.519,0.317,0.164,0.661]},"7":{"s":[0.266,0,0.734],"h":[0.533,0.09,0.378],"d":[0.424,0.056,0.519],"sp":[0.424,0.407,0.169,0.483]},"8":{"s":[0.24,0,0.76],"h":[0.492,0.112,0.396],"d":[0.389,0.059,0.552],"sp":[0.389,0.418,0.192,0.362]},"9":{"s":[0.228,0,0.772],"h":[0.441,0.116,0.442],"d":[0.36,0.062,0.578],"sp":[0.351,0.432,0.217,0.237]},"10":{"s":[0.211,0,0.789],"h":[0.372,0.121,0.507],"d":[0.313,0.064,0.624],"sp":[0.318,0.432,0.251,0.073]},"A":{"s":[0.115,0,0.885],"h":[0.301,0.135,0.564],"d":[0.215,0.07,0.715],"sp":[0.215,0.48,0.305,-0.342]}}}},"H17":{"hard":{"5":{"2":{"s":[0.356,0,0.644],"h":[0.417,0.039,0.545],"d":[0.358,0,0.642]},"3":{"s":[0.371,0,0.629],"h":[0.431,0.037,0.532],"d":[0.37,0,0.63]},"4":{"s":[0.397,0,0.603],"h":[0.453,0.031,0.516],"d":[0.401,0,0.599]},"5":{"s":[0.419,0,0.581],"h":[0.471,0.028,0.501],"d":[0.412,0,0.588]},"6":{"s":[0.436,0,0.564],"h":[0.492,0.027,0.481],"d":[0.441,0,0.559]},"7":{"s":[0.264,0,0.736],"h":[0.398,0.089,0.513],"d":[0.266,0,0.734]},"8":{"s":[0.247,0,0.753],"h":[0.363,0.089,0.548],"d":[0.243,0,0.757]},"9":{"s":[0.232,0,0.768],"h":[0.321,0.09,0.589],"d":[0.23,0,0.77]},"10":{"s":[0.209,0,0.791],"h":[0.278,0.092,0.63],"d":[0.213,0,0.787]},"A":{"s":[0.14,0,0.86],"h":[0.203,0.095,0.703],"d":[0.146,0,0.854]}},"6":{"2":{"s":[0.355,0,0.645],"h":[0.414,0.034,0.552],"d":[0.356,0.009,0.635]},"3":{"s":[0.376,0,0.624],"h":[0.423,0.032,0.545],"d":[0.372,0.01,0.618]},"4":{"s":[0.399,0,0.601],"h":[0.454,0.028,0.518],"d":[0.391,0.009,0.6]},"5":{"s":[0.416,0,0.584],"h":[0.467,0.026,0.507],"d":[0.42,0.008,0.572]},"6":{"s":[0.442,0,0.558],"h":[0.494,0.024,0.481],"d":[0.44,0.009,0.551]},"7":{"s":[0.264,0,0.736],"h":[0.382,0.084,0.534],"d":[0.26,0.028,0.712]},"8":{"s":[0.25,0,0.75],"h":[0.348,0.087,0.566],"d":[0.248,0.008,0.743]},"9":{"s":[0.228,0,0.772],"h":[0.313,0.087,0.6],"d":[0.228,0.009,0.763]},"10":{"s":[0.212,0,0.788],"h":[0.274,0.088,0.638],"d":[0.21,0.009,0.781]},"A":{"s":[0.139,0,0.861],"h":[0.197,0.095,0.708],"d":[0.134,0.004,0.861]}},"7":{"2":{"s":[0.359,0,0.641],"h":[0.409,0.072,0.52],"d":[0.371,0.052,0.577]},"3":{"s":[0.379,0,0.621],"h":[0.427,0.065,0.509],"d":[0.384,0.049,0.567]},"4":{"s":[0.399,0,0.601],"h":[0.449,0.061,0.49],"d":[0.409,0.049,0.542]},"5":{"s":[0.418,0,0.582],"h":[0.468,0.058,0.474],"d":[0.423,0.047,0.531]},"6":{"s":[0.441,0,0.559],"h":[0.492,0.056,0.452],"d":[0.455,0.043,0.502]},"7":{"s":[0.259,0,0.741],"h":[0.38,0.173,0.447],"d":[0.295,0.121,0.585]},"8":{"s":[0.247,0,0.753],"h":[0.34,0.113,0.547],"d":[0.254,0.067,0.679]},"9":{"s":[0.224,0,0.776],"h":[0.312,0.096,0.592],"d":[0.236,0.048,0.716]},"10":{"s":[0.213,0,0.787],"h":[0.267,0.103,0.63],"d":[0.22,0.042,0.738]},"A":{"s":[0.135,0,0.865],"h":[0.189,0.09,0.721],"d":[0.145,0.031,0.824]}},"8":{"2":{"s":[0.357,0,0.643],"h":[0.445,0.079,0.477],"d":[0.413,0.062,0.525]},"3":{"s":[0.378,0,0.622],"h":[0.468,0.074,0.458],"d":[0.434,0.06,0.506]},"4":{"s":[0.401,0,0.599],"h":[0.485,0.07,0.445],"d":[0.456,0.057,0.487]},"5":{"s":[0.421,0,0.58],"h":[0.499,0.066,0.435],"d":[0.471,0.057,0.472]},"6":{"s":[0.436,0,0.564],"h":[0.518,0.064,0.419],"d":[0.49,0.052,0.458]},"7":{"s":[0.26,0,0.74],"h":[0.471,0.123,0.406],"d":[0.417,0.08,0.502]},"8":{"s":[0.243,0,0.757],"h":[0.383,0.172,0.445],"d":[0.324,0.13,0.547]},"9":{"s":[0.229,0,0.771],"h":[0.342,0.115,0.543],"d":[0.285,0.07,0.645]},"10":{"s":[0.208,0,0.792],"h":[0.302,0.099,0.599],"d":[0.261,0.055,0.684]},"A":{"s":[0.138,0,0.862],"h":[0.209,0.115,0.677],"d":[0.168,0.058,0.774]}},"9":{"2":{"s":[0.354,0,0.646],"h":[0.495,0.08,0.425],"d":[0.477,0.071,0.451]},"3":{"s":[0.377,0,0.623],"h":[0.511,0.078,0.411],"d":[0.492,0.067,0.441]},"4":{"s":[0.398,0,0.602],"h":[0.53,0.071,0.398],"d":[0.516,0.064,0.42]},"5":{"s":[0.417,0,0.583],"h":[0.546,0.069,0.385],"d":[0.53,0.065,0.406]},"6":{"s":[0.436,0,0.564],"h":[0.558,0.065,0.378],"d":[0.551,0.062,0.387]},"7":{"s":[0.264,0,0.736],"h":[0.532,0.105,0.363],"d":[0.494,0.065,0.441]},"8":{"s":[0.245,0,0.755],"h":[0.493,0.116,0.391],"d":[0.453,0.081,0.466]},"9":{"s":[0.229,0,0.771],"h":[0.393,0.168,0.439],"d":[0.352,0.137,0.511]},"10":{"s":[0.206,0,0.794],"h":[0.341,0.111,0.548],"d":[0.314,0.079,0.607]},"A":{"s":[0.141,0,0.859],"h":[0.262,0.112,0.627],"d":[0.23,0.071,0.699]}},"10":{"2":{"s":[0.355,0,0.646],"h":[0.556,0.078,0.366],"d":[0.55,0.081,0.369]},"3":{"s":[0.378,0,0.622],"h":[0.563,0.081,0.357],"d":[0.567,0.074,0.359]},"4":{"s":[0.392,0,0.608],"h":[0.577,0.074,0.349],"d":[0.579,0.077,0.344]},"5":{"s":[0.419,0,0.581],"h":[0.591,0.072,0.337],"d":[0.591,0.071,0.339]},"6":{"s":[0.434,0,0.566],"h":[0.606,0.068,0.326],"d":[0.603,0.069,0.328]},"7":{"s":[0.267,0,0.733],"h":[0.58,0.1,0.319],"d":[0.564,0.076,0.36]},"8":{"s":[0.245,0,0.755],"h":[0.542,0.102,0.356],"d":[0.534,0.072,0.393]},"9":{"s":[0.229,0,0.771],"h":[0.503,0.114,0.383],"d":[0.494,0.085,0.422]},"10":{"s":[0.205,0,0.795],"h":[0.395,0.166,0.439],"d":[0.391,0.139,0.47]},"A":{"s":[0.137,0,0.863],"h":[0.311,0.127,0.563],"d":[0.299,0.098,0.603]}},"11":{"2":{"s":[0.356,0,0.644],"h":[0.578,0.079,0.343],"d":[0.582,0.081,0.338]},"3":{"s":[0.382,0,0.618],"h":[0.594,0.078,0.329],"d":[0.594,0.076,0.33]},"4":{"s":[0.392,0,0.608],"h":[0.607,0.074,0.319],"d":[0.604,0.073,0.324]},"5":{"s":[0.421,0,0.579],"h":[0.623,0.068,0.309],"d":[0.616,0.069,0.315]},"6":{"s":[0.445,0,0.555],"h":[0.631,0.067,0.301],"d":[0.638,0.065,0.297]},"7":{"s":[0.26,0,0.74],"h":[0.598,0.1,0.302],"d":[0.578,0.074,0.348]},"8":{"s":[0.251,0,0.749],"h":[0.565,0.101,0.335],"d":[0.549,0.072,0.379]},"9":{"s":[0.234,0,0.766],"h":[0.525,0.101,0.374],"d":[0.528,0.072,0.4]},"10":{"s":[0.215,0,0.785],"h":[0.471,0.12,0.409],"d":[0.476,0.086,0.438]},"A":{"s":[0.14,0,0.86],"h":[0.342,0.183,0.475],"d":[0.338,0.148,0.514]}},"12":{"2":{"s":[0.358,0,0.642],"h":[0.351,0.049,0.6],"d":[0.349,0.05,0.601]},"3":{"s":[0.375,0,0.625],"h":[0.36,0.048,0.592],"d":[0.358,0.051,0.591]},"4":{"s":[0.395,0,0.605],"h":[0.395,0,0.605],"d":[0.371,0.046,0.583]},"5":{"s":[0.417,0,0.583],"h":[0.418,0,0.582],"d":[0.381,0.045,0.574]},"6":{"s":[0.439,0,0.561],"h":[0.447,0,0.553],"d":[0.394,0.042,0.564]},"7":{"s":[0.26,0,0.74],"h":[0.351,0.078,0.57],"d":[0.349,0.058,0.593]},"8":{"s":[0.242,0,0.758],"h":[0.322,0.078,0.6],"d":[0.316,0.059,0.626]},"9":{"s":[0.233,0,0.767],"h":[0.288,0.08,0.632],"d":[0.286,0.058,0.656]},"10":{"s":[0.214,0,0.786],"h":[0.247,0.081,0.671],"d":[0.254,0.062,0.685]},"A":{"s":[0.141,0,0.859],"h":[0.184,0.09,0.726],"d":[0.177,0.065,0.757]}},"13":{"2":{"s":[0.355,0,0.645],"h":[0.358,0,0.642],"d":[0.328,0.048,0.623]},"3":{"s":[0.37,0,0.63],"h":[0.377,0,0.623],"d":[0.339,0.047,0.614]},"4":{"s":[0.397,0,0.603],"h":[0.4,0,0.6],"d":[0.342,0.047,0.611]},"5":{"s":[0.424,0,0.576],"h":[0.419,0,0.581],"d":[0.354,0.046,0.6]},"6":{"s":[0.437,0,0.563],"h":[0.438,0,0.563],"d":[0.361,0.044,0.595]},"7":{"s":[0.265,0,0.735],"h":[0.328,0.066,0.606],"d":[0.324,0.06,0.617]},"8":{"s":[0.248,0,0.752],"h":[0.304,0.074,0.622],"d":[0.297,0.058,0.645]},"9":{"s":[0.233,0,0.767],"h":[0.268,0.073,0.659],"d":[0.266,0.058,0.676]},"10":{"s":[0.22,0,0.78],"h":[0.232,0.078,0.69],"d":[0.235,0.063,0.703]},"A":{"s":[0.138,0,0.862],"h":[0.17,0.081,0.749],"d":[0.173,0.066,0.761]}},"14":{"2":{"s":[0.361,0,0.639],"h":[0.356,0,0.644],"d":[0.296,0.05,0.654]},"3":{"s":[0.378,0,0.622],"h":[0.382,0,0.618],"d":[0.303,0.05,0.647]},"4":{"s":[0.397,0,0.603],"h":[0.39,0,0.61],"d":[0.305,0.046,0.649]},"5":{"s":[0.416,0,0.584],"h":[0.411,0,0.589],"d":[0.315,0.047,0.638]},"6":{"s":[0.44,0,0.561],"h":[0.439,0,0.561],"d":[0.324,0.041,0.635]},"7":{"s":[0.265,0,0.735],"h":[0.302,0.066,0.631],"d":[0.299,0.058,0.643]},"8":{"s":[0.247,0,0.753],"h":[0.279,0.066,0.655],"d":[0.276,0.062,0.662]},"9":{"s":[0.232,0,0.768],"h":[0.25,0.071,0.68],"d":[0.248,0.06,0.692]},"10":{"s":[0.212,0,0.788],"h":[0.215,0.071,0.714],"d":[0.22,0.061,0.719]},"A":{"s":[0.137,0,0.863],"h":[0.16,0.076,0.764],"d":[0.162,0.065,0.774]}},"15":{"2":{"s":[0.359,0,0.641],"h":[0.354,0,0.646],"d":[0.271,0.05,0.679]},"3":{"s":[0.375,0,0.625],"h":[0.379,0,0.621],"d":[0.268,0.048,0.684]},"4":{"s":[0.397,0,0.603],"h":[0.391,0,0.609],"d":[0.276,0.045,0.68]},"5":{"s":[0.423,0,0.577],"h":[0.416,0,0.584],"d":[0.287,0.048,0.665]},"6":{"s":[0.441,0,0.559],"h":[0.439,0,0.561],"d":[0.294,0.042,0.665]},"7":{"s":[0.264,0,0.736],"h":[0.283,0.065,0.652],"d":[0.283,0.058,0.659]},"8":{"s":[0.249,0,0.751],"h":[0.259,0.063,0.678],"d":[0.258,0.058,0.684]},"9":{"s":[0.228,0,0.772],"h":[0.236,0.063,0.701],"d":[0.233,0.06,0.707]},"10":{"s":[0.215,0,0.785],"h":[0.195,0.066,0.739],"d":[0.198,0.061,0.741]},"A":{"s":[0.142,0,0.858],"h":[0.15,0.073,0.777],"d":[0.148,0.066,0.786]}},"16":{"2":{"s":[0.361,0,0.639],"h":[0.36,0,0.64],"d":[0.245,0.049,0.706]},"3":{"s":[0.376,0,0.624],"h":[0.378,0,0.622],"d":[0.243,0.047,0.71]},"4":{"s":[0.392,0,0.608],"h":[0.399,0,0.601],"d":[0.242,0.046,0.712]},"5":{"s":[0.418,0,0.582],"h":[0.421,0,0.579],"d":[0.256,0.045,0.699]},"6":{"s":[0.443,0,0.557],"h":[0.443,0,0.557],"d":[0.257,0.043,0.7]},"7":{"s":[0.268,0,0.732],"h":[0.264,0.055,0.681],"d":[0.259,0.056,0.686]},"8":{"s":[0.242,0,0.759],"h":[0.242,0.061,0.697],"d":[0.237,0.058,0.705]},"9":{"s":[0.229,0,0.771],"h":[0.214,0.059,0.727],"d":[0.211,0.061,0.728]},"10":{"s":[0.213,0,0.787],"h":[0.182,0.061,0.757],"d":[0.188,0.063,0.749]},"A":{"s":[0.136,0,0.864],"h":[0.135,0.067,0.797],"d":[0.137,0.068,0.795]}},"17":{"2":{"s":[0.357,0.131,0.512],"h":[0.36,0.133,0.507],"d":[0.214,0.042,0.744]},"3":{"s":[0.375,0.128,0.497],"h":[0.373,0.123,0.504],"d":[0.214,0.037,0.748]},"4":{"s":[0.404,0.12,0.476],"h":[0.392,0.122,0.487],"d":[0.222,0.036,0.743]},"5":{"s":[0.421,0.121,0.458],"h":[0.415,0.119,0.467],"d":[0.221,0.034,0.745]},"6":{"s":[0.438,0.115,0.447],"h":[0.439,0.112,0.449],"d":[0.223,0.035,0.742]},"7":{"s":[0.258,0.369,0.373],"h":[0.263,0.367,0.37],"d":[0.245,0.03,0.725]},"8":{"s":[0.245,0.126,0.629],"h":[0.252,0.122,0.627],"d":[0.224,0.05,0.726]},"9":{"s":[0.231,0.118,0.651],"h":[0.234,0.123,0.643],"d":[0.2,0.052,0.748]},"10":{"s":[0.212,0.109,0.679],"h":[0.208,0.11,0.682],"d":[0.171,0.051,0.777]},"A":{"s":[0.136,0.059,0.805],"h":[0.141,0.057,0.802],"d":[0.125,0.064,0.811]}},"18":{"2":{"s":[0.484,0.137,0.379],"h":[0.481,0.139,0.38],"d":[0.172,0.029,0.799]},"3":{"s":[0.499,0.132,0.369],"h":[0.502,0.132,0.366],"d":[0.177,0.028,0.796]},"4":{"s":[0.52,0.129,0.351],"h":[0.522,0.13,0.348],"d":[0.181,0.026,0.793]},"5":{"s":[0.536,0.121,0.344],"h":[0.538,0.124,0.338],"d":[0.176,0.027,0.796]},"6":{"s":[0.554,0.116,0.33],"h":[0.556,0.111,0.334],"d":[0.18,0.024,0.796]},"7":{"s":[0.629,0.142,0.229],"h":[0.634,0.138,0.228],"d":[0.193,0.018,0.788]},"8":{"s":[0.373,0.362,0.265],"h":[0.366,0.361,0.273],"d":[0.194,0.019,0.787]},"9":{"s":[0.347,0.119,0.535],"h":[0.338,0.123,0.539],"d":[0.166,0.041,0.792]},"10":{"s":[0.325,0.114,0.561],"h":[0.327,0.113,0.561],"d":[0.146,0.043,0.812]},"A":{"s":[0.195,0.141,0.664],"h":[0.195,0.142,0.663],"d":[0.116,0.052,0.833]}},"19":{"2":{"s":[0.628,0.128,0.244],"h":[0.623,0.135,0.242],"d":[0.125,0.02,0.855]},"3":{"s":[0.641,0.124,0.235],"h":[0.637,0.124,0.239],"d":[0.129,0.019,0.852]},"4":{"s":[0.655,0.118,0.227],"h":[0.644,0.121,0.235],"d":[0.128,0.017,0.855]},"5":{"s":[0.66,0.118,0.222],"h":[0.665,0.118,0.217],"d":[0.126,0.016,0.858]},"6":{"s":[0.672,0.111,0.217],"h":[0.667,0.118,0.215],"d":[0.128,0.016,0.856]},"7":{"s":[0.767,0.077,0.156],"h":[0.772,0.078,0.15],"d":[0.135,0.011,0.854]},"8":{"s":[0.733,0.127,0.14],"h":[0.732,0.128,0.14],"d":[0.14,0.011,0.849]},"9":{"s":[0.469,0.352,0.179],"h":[0.469,0.351,0.179],"d":[0.131,0.015,0.854]},"10":{"s":[0.436,0.11,0.455],"h":[0.436,0.113,0.451],"d":[0.112,0.035,0.853]},"A":{"s":[0.34,0.14,0.521],"h":[0.335,0.144,0.522],"d":[0.082,0.04,0.878]}},"20":{"2":{"s":[0.758,0.121,0.121],"h":[0.756,0.123,0.12],"d":[0.067,0.008,0.925]},"3":{"s":[0.764,0.122,0.115],"h":[0.761,0.121,0.118],"d":[0.067,0.008,0.925]},"4":{"s":[0.771,0.118,0.112],"h":[0.766,0.122,0.111],"d":[0.066,0.008,0.925]},"5":{"s":[0.778,0.113,0.109],"h":[0.78,0.115,0.105],"d":[0.069,0.009,0.922]},"6":{"s":[0.783,0.11,0.108],"h":[0.788,0.107,0.105],"d":[0.071,0.008,0.921]},"7":{"s":[0.85,0.075,0.075],"h":[0.845,0.079,0.076],"d":[0.07,0.006,0.924]},"8":{"s":[0.863,0.066,0.071],"h":[0.859,0.069,0.072],"d":[0.071,0.005,0.924]},"9":{"s":[0.816,0.12,0.064],"h":[0.819,0.12,0.061],"d":[0.074,0.005,0.922]},"10":{"s":[0.542,0.345,0.114],"h":[0.55,0.341,0.109],"d":[0.066,0.009,0.925]},"A":{"s":[0.478,0.145,0.377],"h":[0.486,0.138,0.376],"d":[0.05,0.027,0.923]}}},"soft":{"13":{"2":{"s":[0.357,0,0.643],"h":[0.488,0.059,0.453],"d":[0.454,0.049,0.498]},"3":{"s":[0.377,0,0.624],"h":[0.511,0.053,0.435],"d":[0.474,0.05,0.477]},"4":{"s":[0.401,0,0.599],"h":[0.529,0.047,0.425],"d":[0.489,0.047,0.464]},"5":{"s":[0.411,0,0.589],"h":[0.544,0.048,0.408],"d":[0.507,0.043,0.45]},"6":{"s":[0.439,0,0.561],"h":[0.557,0.045,0.397],"d":[0.528,0.042,0.43]},"7":{"s":[0.256,0,0.744],"h":[0.519,0.089,0.392],"d":[0.427,0.058,0.515]},"8":{"s":[0.245,0,0.755],"h":[0.473,0.114,0.413],"d":[0.389,0.057,0.554]},"9":{"s":[0.23,0,0.77],"h":[0.427,0.106,0.467],"d":[0.359,0.06,0.581]},"10":{"s":[0.214,0,0.786],"h":[0.365,0.113,0.522],"d":[0.319,0.061,0.62]},"A":{"s":[0.139,0,0.861],"h":[0.272,0.128,0.6],"d":[0.228,0.066,0.706]}},"14":{"2":{"s":[0.354,0,0.646],"h":[0.474,0.058,0.468],"d":[0.455,0.05,0.495]},"3":{"s":[0.373,0,0.627],"h":[0.498,0.051,0.451],"d":[0.468,0.048,0.483]},"4":{"s":[0.398,0,0.602],"h":[0.519,0.043,0.438],"d":[0.487,0.047,0.466]},"5":{"s":[0.416,0,0.585],"h":[0.535,0.044,0.421],"d":[0.51,0.044,0.446]},"6":{"s":[0.438,0,0.563],"h":[0.549,0.041,0.409],"d":[0.526,0.042,0.432]},"7":{"s":[0.263,0,0.737],"h":[0.5,0.084,0.417],"d":[0.427,0.056,0.516]},"8":{"s":[0.242,0,0.758],"h":[0.454,0.105,0.441],"d":[0.39,0.059,0.551]},"9":{"s":[0.225,0,0.775],"h":[0.411,0.108,0.481],"d":[0.359,0.059,0.582]},"10":{"s":[0.209,0,0.792],"h":[0.352,0.111,0.537],"d":[0.317,0.059,0.624]},"A":{"s":[0.142,0,0.858],"h":[0.264,0.124,0.611],"d":[0.223,0.067,0.711]}},"15":{"2":{"s":[0.353,0,0.647],"h":[0.468,0.052,0.48],"d":[0.46,0.05,0.489]},"3":{"s":[0.379,0,0.621],"h":[0.486,0.045,0.469],"d":[0.475,0.049,0.476]},"4":{"s":[0.396,0,0.604],"h":[0.504,0.042,0.454],"d":[0.491,0.046,0.463]},"5":{"s":[0.42,0,0.58],"h":[0.525,0.039,0.436],"d":[0.509,0.047,0.445]},"6":{"s":[0.434,0,0.566],"h":[0.543,0.041,0.417],"d":[0.528,0.044,0.428]},"7":{"s":[0.265,0,0.735],"h":[0.474,0.083,0.443],"d":[0.428,0.057,0.516]},"8":{"s":[0.245,0,0.755],"h":[0.436,0.105,0.459],"d":[0.396,0.057,0.547]},"9":{"s":[0.228,0,0.772],"h":[0.396,0.104,0.5],"d":[0.359,0.059,0.582]},"10":{"s":[0.214,0,0.786],"h":[0.331,0.109,0.56],"d":[0.314,0.065,0.621]},"A":{"s":[0.138,0,0.862],"h":[0.252,0.116,0.632],"d":[0.22,0.067,0.713]}},"16":{"2":{"s":[0.354,0,0.646],"h":[0.47,0.049,0.481],"d":[0.458,0.05,0.493]},"3":{"s":[0.378,0,0.622],"h":[0.471,0.046,0.483],"d":[0.477,0.048,0.475]},"4":{"s":[0.395,0,0.605],"h":[0.494,0.04,0.467],"d":[0.492,0.048,0.46]},"5":{"s":[0.419,0,0.581],"h":[0.511,0.038,0.451],"d":[0.511,0.045,0.444]},"6":{"s":[0.446,0,0.554],"h":[0.531,0.036,0.433],"d":[0.527,0.045,0.427]},"7":{"s":[0.266,0,0.734],"h":[0.46,0.078,0.462],"d":[0.424,0.056,0.52]},"8":{"s":[0.243,0,0.757],"h":[0.422,0.096,0.482],"d":[0.392,0.056,0.552]},"9":{"s":[0.228,0,0.773],"h":[0.378,0.097,0.525],"d":[0.355,0.062,0.583]},"10":{"s":[0.214,0,0.786],"h":[0.322,0.101,0.578],"d":[0.319,0.059,0.623]},"A":{"s":[0.137,0,0.863],"h":[0.241,0.12,0.64],"d":[0.223,0.068,0.709]}},"17":{"2":{"s":[0.349,0.132,0.519],"h":[0.462,0.082,0.456],"d":[0.466,0.078,0.456]},"3":{"s":[0.378,0.125,0.497],"h":[0.47,0.077,0.452],"d":[0.478,0.077,0.445]},"4":{"s":[0.399,0.118,0.483],"h":[0.487,0.071,0.442],"d":[0.488,0.075,0.437]},"5":{"s":[0.412,0.12,0.468],"h":[0.511,0.068,0.421],"d":[0.507,0.07,0.424]},"6":{"s":[0.439,0.118,0.443],"h":[0.529,0.065,0.406],"d":[0.518,0.074,0.408]},"7":{"s":[0.265,0.368,0.367],"h":[0.443,0.171,0.386],"d":[0.425,0.141,0.434]},"8":{"s":[0.248,0.125,0.628],"h":[0.408,0.114,0.478],"d":[0.4,0.087,0.513]},"9":{"s":[0.228,0.118,0.654],"h":[0.363,0.112,0.524],"d":[0.353,0.088,0.559]},"10":{"s":[0.215,0.117,0.668],"h":[0.32,0.114,0.566],"d":[0.319,0.085,0.596]},"A":{"s":[0.139,0.057,0.804],"h":[0.234,0.111,0.655],"d":[0.22,0.079,0.701]}},"18":{"2":{"s":[0.485,0.139,0.377],"h":[0.477,0.141,0.382],"d":[0.492,0.082,0.427]},"3":{"s":[0.497,0.133,0.371],"h":[0.502,0.081,0.418],"d":[0.503,0.079,0.417]},"4":{"s":[0.521,0.127,0.352],"h":[0.526,0.072,0.402],"d":[0.522,0.076,0.402]},"5":{"s":[0.539,0.123,0.338],"h":[0.54,0.071,0.389],"d":[0.54,0.074,0.386]},"6":{"s":[0.553,0.116,0.331],"h":[0.556,0.07,0.374],"d":[0.552,0.069,0.379]},"7":{"s":[0.626,0.138,0.236],"h":[0.63,0.136,0.234],"d":[0.51,0.089,0.401]},"8":{"s":[0.373,0.363,0.264],"h":[0.368,0.357,0.275],"d":[0.415,0.143,0.442]},"9":{"s":[0.351,0.12,0.529],"h":[0.392,0.114,0.494],"d":[0.383,0.084,0.533]},"10":{"s":[0.32,0.114,0.566],"h":[0.342,0.114,0.544],"d":[0.342,0.085,0.573]},"A":{"s":[0.194,0.146,0.66],"h":[0.243,0.134,0.623],"d":[0.231,0.103,0.666]}},"19":{"2":{"s":[0.621,0.13,0.249],"h":[0.621,0.131,0.248],"d":[0.517,0.081,0.401]},"3":{"s":[0.64,0.127,0.234],"h":[0.637,0.126,0.237],"d":[0.531,0.077,0.391]},"4":{"s":[0.645,0.125,0.229],"h":[0.646,0.123,0.231],"d":[0.551,0.076,0.373]},"5":{"s":[0.659,0.118,0.224],"h":[0.656,0.118,0.226],"d":[0.565,0.073,0.363]},"6":{"s":[0.67,0.114,0.216],"h":[0.668,0.117,0.215],"d":[0.573,0.07,0.356]},"7":{"s":[0.767,0.08,0.153],"h":[0.766,0.081,0.153],"d":[0.543,0.073,0.383]},"8":{"s":[0.731,0.129,0.14],"h":[0.733,0.124,0.143],"d":[0.503,0.09,0.407]},"9":{"s":[0.469,0.352,0.179],"h":[0.471,0.348,0.182],"d":[0.41,0.139,0.452]},"10":{"s":[0.436,0.113,0.451],"h":[0.442,0.109,0.449],"d":[0.365,0.088,0.547]},"A":{"s":[0.344,0.146,0.51],"h":[0.345,0.141,0.514],"d":[0.267,0.102,0.631]}},"20":{"2":{"s":[0.75,0.128,0.122],"h":[0.757,0.127,0.117],"d":[0.546,0.081,0.373]},"3":{"s":[0.765,0.12,0.115],"h":[0.761,0.123,0.116],"d":[0.571,0.077,0.352]},"4":{"s":[0.771,0.116,0.113],"h":[0.769,0.117,0.114],"d":[0.575,0.076,0.349]},"5":{"s":[0.775,0.112,0.113],"h":[0.782,0.111,0.107],"d":[0.59,0.071,0.339]},"6":{"s":[0.783,0.108,0.109],"h":[0.784,0.11,0.106],"d":[0.608,0.068,0.324]},"7":{"s":[0.844,0.081,0.075],"h":[0.849,0.078,0.073],"d":[0.564,0.074,0.362]},"8":{"s":[0.859,0.072,0.069],"h":[0.861,0.069,0.07],"d":[0.536,0.072,0.392]},"9":{"s":[0.821,0.121,0.058],"h":[0.819,0.118,0.063],"d":[0.493,0.087,0.42]},"10":{"s":[0.549,0.34,0.111],"h":[0.55,0.34,0.11],"d":[0.388,0.14,0.473]},"A":{"s":[0.48,0.142,0.377],"h":[0.488,0.142,0.37],"d":[0.299,0.094,0.607]}}},"pair":{"2":{"2":{"s":[0.357,0,0.644],"h":[0.425,0.041,0.535],"d":[0.356,0,0.644],"sp":[0.31,0.334,0.356,-0.158]},"3":{"s":[0.376,0,0.624],"h":[0.436,0.038,0.526],"d":[0.376,0,0.624],"sp":[0.327,0.326,0.347,-0.098]},"4":{"s":[0.397,0,0.603],"h":[0.463,0.029,0.507],"d":[0.395,0,0.605],"sp":[0.41,0.184,0.406,-0.042]},"5":{"s":[0.416,0,0.584],"h":[0.476,0.032,0.492],"d":[0.42,0,0.58],"sp":[0.432,0.177,0.391,0.031]},"6":{"s":[0.442,0,0.558],"h":[0.501,0.029,0.469],"d":[0.436,0,0.564],"sp":[0.447,0.171,0.383,0.08]},"7":{"s":[0.262,0,0.738],"h":[0.41,0.089,0.501],"d":[0.263,0,0.737],"sp":[0.228,0.529,0.243,-0.048]},"8":{"s":[0.246,0,0.754],"h":[0.373,0.093,0.534],"d":[0.244,0,0.756],"sp":[0.195,0.534,0.27,-0.198]},"9":{"s":[0.227,0,0.773],"h":[0.331,0.092,0.577],"d":[0.236,0,0.764],"sp":[0.169,0.503,0.328,-0.383]},"10":{"s":[0.21,0,0.79],"h":[0.286,0.096,0.618],"d":[0.21,0,0.79],"sp":[0.14,0.463,0.397,-0.597]},"A":{"s":[0.14,0,0.86],"h":[0.212,0.103,0.684],"d":[0.139,0,0.861],"sp":[0.102,0.409,0.489,-0.894]}},"3":{"2":{"s":[0.358,0,0.642],"h":[0.419,0.033,0.548],"d":[0.353,0.01,0.637],"sp":[0.345,0.237,0.417,-0.195]},"3":{"s":[0.377,0,0.623],"h":[0.434,0.033,0.533],"d":[0.376,0.01,0.614],"sp":[0.365,0.23,0.405,-0.13]},"4":{"s":[0.397,0,0.603],"h":[0.451,0.03,0.519],"d":[0.401,0.01,0.59],"sp":[0.411,0.171,0.418,-0.062]},"5":{"s":[0.411,0,0.589],"h":[0.472,0.026,0.502],"d":[0.418,0.011,0.571],"sp":[0.43,0.17,0.4,0.011]},"6":{"s":[0.448,0,0.552],"h":[0.492,0.026,0.482],"d":[0.438,0.008,0.555],"sp":[0.449,0.158,0.393,0.067]},"7":{"s":[0.259,0,0.741],"h":[0.38,0.088,0.532],"d":[0.262,0.028,0.71],"sp":[0.214,0.527,0.259,-0.117]},"8":{"s":[0.25,0,0.75],"h":[0.348,0.087,0.565],"d":[0.243,0.01,0.747],"sp":[0.178,0.534,0.289,-0.267]},"9":{"s":[0.225,0,0.775],"h":[0.31,0.089,0.601],"d":[0.227,0.01,0.763],"sp":[0.156,0.51,0.334,-0.423]},"10":{"s":[0.212,0,0.788],"h":[0.265,0.091,0.644],"d":[0.212,0.01,0.778],"sp":[0.137,0.46,0.403,-0.622]},"A":{"s":[0.138,0,0.862],"h":[0.196,0.095,0.709],"d":[0.143,0.005,0.851],"sp":[0.098,0.403,0.499,-0.915]}},"4":{"2":{"s":[0.355,0,0.645],"h":[0.447,0.08,0.473],"d":[0.417,0.062,0.521],"sp":[0.351,0.223,0.426,-0.206]},"3":{"s":[0.384,0,0.616],"h":[0.463,0.076,0.461],"d":[0.433,0.061,0.506],"sp":[0.366,0.221,0.414,-0.148]},"4":{"s":[0.4,0,0.6],"h":[0.485,0.067,0.448],"d":[0.454,0.057,0.489],"sp":[0.406,0.16,0.434,-0.102]},"5":{"s":[0.419,0,0.581],"h":[0.5,0.065,0.435],"d":[0.47,0.056,0.474],"sp":[0.429,0.153,0.418,-0.021]},"6":{"s":[0.44,0,0.56],"h":[0.517,0.063,0.42],"d":[0.489,0.054,0.457],"sp":[0.452,0.149,0.399,0.064]},"7":{"s":[0.255,0,0.745],"h":[0.481,0.121,0.398],"d":[0.41,0.076,0.513],"sp":[0.201,0.53,0.269,-0.168]},"8":{"s":[0.246,0,0.754],"h":[0.384,0.171,0.445],"d":[0.321,0.132,0.548],"sp":[0.172,0.522,0.306,-0.323]},"9":{"s":[0.228,0,0.772],"h":[0.337,0.116,0.548],"d":[0.279,0.073,0.648],"sp":[0.148,0.502,0.35,-0.47]},"10":{"s":[0.215,0,0.785],"h":[0.299,0.098,0.603],"d":[0.266,0.051,0.684],"sp":[0.125,0.462,0.413,-0.662]},"A":{"s":[0.134,0,0.866],"h":[0.215,0.115,0.67],"d":[0.175,0.059,0.766],"sp":[0.088,0.406,0.506,-0.955]}},"5":{"2":{"s":[0.358,0,0.642],"h":[0.551,0.082,0.367],"d":[0.55,0.079,0.371],"sp":[0.338,0.216,0.447,-0.273]},"3":{"s":[0.382,0,0.618],"h":[0.565,0.082,0.353],"d":[0.567,0.076,0.357],"sp":[0.363,0.204,0.433,-0.188]},"4":{"s":[0.398,0,0.602],"h":[0.574,0.073,0.353],"d":[0.579,0.076,0.345],"sp":[0.409,0.154,0.437,-0.104]},"5":{"s":[0.419,0,0.581],"h":[0.598,0.069,0.333],"d":[0.597,0.069,0.334],"sp":[0.428,0.149,0.423,-0.034]},"6":{"s":[0.432,0,0.568],"h":[0.608,0.069,0.323],"d":[0.606,0.067,0.327],"sp":[0.455,0.137,0.408,0.055]},"7":{"s":[0.26,0,0.74],"h":[0.578,0.099,0.322],"d":[0.565,0.077,0.358],"sp":[0.187,0.524,0.289,-0.242]},"8":{"s":[0.245,0,0.755],"h":[0.553,0.1,0.348],"d":[0.535,0.076,0.39],"sp":[0.165,0.522,0.313,-0.348]},"9":{"s":[0.23,0,0.77],"h":[0.505,0.111,0.384],"d":[0.5,0.09,0.41],"sp":[0.139,0.501,0.36,-0.511]},"10":{"s":[0.208,0,0.792],"h":[0.397,0.171,0.432],"d":[0.397,0.137,0.466],"sp":[0.121,0.45,0.429,-0.711]},"A":{"s":[0.141,0,0.859],"h":[0.307,0.126,0.567],"d":[0.3,0.1,0.6],"sp":[0.083,0.396,0.521,-0.993]}},"6":{"2":{"s":[0.356,0,0.644],"h":[0.348,0.051,0.6],"d":[0.348,0.051,0.601],"sp":[0.34,0.2,0.46,-0.291]},"3":{"s":[0.375,0,0.625],"h":[0.358,0.047,0.594],"d":[0.35,0.049,0.6],"sp":[0.361,0.193,0.445,-0.217]},"4":{"s":[0.396,0,0.604],"h":[0.37,0.046,0.584],"d":[0.37,0.045,0.585],"sp":[0.389,0.174,0.437,-0.14]},"5":{"s":[0.419,0,0.581],"h":[0.381,0.046,0.573],"d":[0.378,0.042,0.579],"sp":[0.409,0.171,0.42,-0.069]},"6":{"s":[0.44,0,0.56],"h":[0.389,0.046,0.565],"d":[0.392,0.042,0.566],"sp":[0.429,0.167,0.404,0.008]},"7":{"s":[0.261,0,0.739],"h":[0.353,0.073,0.574],"d":[0.352,0.058,0.59],"sp":[0.176,0.513,0.311,-0.309]},"8":{"s":[0.251,0,0.749],"h":[0.323,0.079,0.598],"d":[0.32,0.059,0.621],"sp":[0.146,0.514,0.34,-0.439]},"9":{"s":[0.227,0,0.773],"h":[0.295,0.08,0.625],"d":[0.287,0.059,0.655],"sp":[0.128,0.49,0.381,-0.575]},"10":{"s":[0.209,0,0.791],"h":[0.247,0.082,0.671],"d":[0.244,0.063,0.693],"sp":[0.11,0.452,0.438,-0.746]},"A":{"s":[0.14,0,0.86],"h":[0.187,0.091,0.723],"d":[0.18,0.063,0.758],"sp":[0.083,0.387,0.531,-1.011]}},"7":{"2":{"s":[0.36,0,0.64],"h":[0.298,0.05,0.652],"d":[0.293,0.049,0.658],"sp":[0.324,0.27,0.406,-0.228]},"3":{"s":[0.377,0,0.623],"h":[0.299,0.044,0.656],"d":[0.299,0.048,0.653],"sp":[0.34,0.261,0.399,-0.181]},"4":{"s":[0.388,0,0.612],"h":[0.31,0.047,0.644],"d":[0.314,0.049,0.637],"sp":[0.382,0.218,0.401,-0.098]},"5":{"s":[0.42,0,0.58],"h":[0.312,0.043,0.645],"d":[0.318,0.046,0.636],"sp":[0.387,0.215,0.397,-0.082]},"6":{"s":[0.438,0,0.562],"h":[0.328,0.044,0.628],"d":[0.328,0.045,0.626],"sp":[0.42,0.205,0.375,0.036]},"7":{"s":[0.26,0,0.741],"h":[0.309,0.067,0.625],"d":[0.309,0.056,0.635],"sp":[0.203,0.534,0.264,-0.134]},"8":{"s":[0.244,0,0.756],"h":[0.28,0.067,0.652],"d":[0.276,0.057,0.667],"sp":[0.174,0.476,0.349,-0.413]},"9":{"s":[0.229,0,0.771],"h":[0.247,0.07,0.683],"d":[0.252,0.061,0.687],"sp":[0.153,0.44,0.406,-0.572]},"10":{"s":[0.211,0,0.789],"h":[0.215,0.07,0.715],"d":[0.221,0.065,0.714],"sp":[0.138,0.401,0.462,-0.724]},"A":{"s":[0.145,0,0.856],"h":[0.162,0.077,0.762],"d":[0.161,0.068,0.772],"sp":[0.093,0.344,0.563,-1.037]}},"8":{"2":{"s":[0.359,0,0.641],"h":[0.237,0.051,0.712],"d":[0.242,0.052,0.707],"sp":[0.342,0.304,0.354,-0.083]},"3":{"s":[0.381,0,0.619],"h":[0.238,0.051,0.711],"d":[0.245,0.047,0.708],"sp":[0.357,0.299,0.344,-0.035]},"4":{"s":[0.396,0,0.604],"h":[0.247,0.047,0.706],"d":[0.248,0.046,0.706],"sp":[0.393,0.26,0.347,0.032]},"5":{"s":[0.413,0,0.587],"h":[0.248,0.044,0.707],"d":[0.254,0.044,0.702],"sp":[0.414,0.258,0.329,0.112]},"6":{"s":[0.435,0,0.565],"h":[0.258,0.04,0.702],"d":[0.255,0.043,0.702],"sp":[0.435,0.246,0.319,0.175]},"7":{"s":[0.26,0,0.74],"h":[0.26,0.058,0.682],"d":[0.258,0.057,0.685],"sp":[0.309,0.471,0.22,0.177]},"8":{"s":[0.238,0,0.762],"h":[0.245,0.058,0.696],"d":[0.241,0.058,0.701],"sp":[0.219,0.528,0.253,-0.117]},"9":{"s":[0.23,0,0.77],"h":[0.222,0.059,0.719],"d":[0.22,0.06,0.72],"sp":[0.193,0.435,0.372,-0.424]},"10":{"s":[0.212,0,0.788],"h":[0.181,0.062,0.757],"d":[0.189,0.06,0.751],"sp":[0.177,0.378,0.445,-0.6]},"A":{"s":[0.142,0,0.858],"h":[0.135,0.067,0.798],"d":[0.139,0.067,0.794],"sp":[0.118,0.349,0.533,-0.917]}},"9":{"2":{"s":[0.485,0.135,0.38],"h":[0.173,0.033,0.794],"d":[0.172,0.03,0.798],"sp":[0.362,0.329,0.309,0.046]},"3":{"s":[0.502,0.135,0.364],"h":[0.18,0.027,0.792],"d":[0.174,0.029,0.798],"sp":[0.375,0.328,0.297,0.095]},"4":{"s":[0.518,0.13,0.353],"h":[0.177,0.027,0.796],"d":[0.178,0.026,0.796],"sp":[0.402,0.289,0.309,0.129]},"5":{"s":[0.536,0.122,0.342],"h":[0.179,0.027,0.794],"d":[0.179,0.025,0.796],"sp":[0.415,0.287,0.297,0.175]},"6":{"s":[0.556,0.117,0.327],"h":[0.182,0.024,0.794],"d":[0.177,0.024,0.799],"sp":[0.44,0.281,0.279,0.263]},"7":{"s":[0.63,0.136,0.234],"h":[0.627,0.135,0.238],"d":[0.192,0.018,0.79],"sp":[0.354,0.468,0.179,0.363]},"8":{"s":[0.369,0.363,0.268],"h":[0.196,0.021,0.783],"d":[0.197,0.021,0.782],"sp":[0.286,0.487,0.227,0.087]},"9":{"s":[0.347,0.12,0.534],"h":[0.17,0.041,0.789],"d":[0.167,0.041,0.792],"sp":[0.204,0.546,0.25,-0.178]},"10":{"s":[0.328,0.112,0.56],"h":[0.325,0.113,0.562],"d":[0.143,0.044,0.813],"sp":[0.209,0.409,0.382,-0.43]},"A":{"s":[0.2,0.144,0.656],"h":[0.197,0.142,0.662],"d":[0.114,0.053,0.834],"sp":[0.154,0.361,0.485,-0.748]}},"10":{"2":{"s":[0.747,0.126,0.127],"h":[0.753,0.127,0.12],"d":[0.065,0.01,0.924],"sp":[0.431,0.345,0.224,0.357]},"3":{"s":[0.756,0.125,0.119],"h":[0.762,0.122,0.117],"d":[0.069,0.009,0.922],"sp":[0.447,0.332,0.221,0.398]},"4":{"s":[0.767,0.118,0.115],"h":[0.764,0.12,0.116],"d":[0.068,0.009,0.923],"sp":[0.476,0.303,0.221,0.457]},"5":{"s":[0.775,0.117,0.109],"h":[0.774,0.116,0.11],"d":[0.068,0.008,0.924],"sp":[0.496,0.287,0.217,0.505]},"6":{"s":[0.783,0.112,0.105],"h":[0.785,0.108,0.107],"d":[0.069,0.008,0.923],"sp":[0.513,0.281,0.207,0.563]},"7":{"s":[0.841,0.081,0.078],"h":[0.848,0.078,0.073],"d":[0.073,0.005,0.922],"sp":[0.396,0.467,0.137,0.527]},"8":{"s":[0.862,0.071,0.067],"h":[0.858,0.072,0.071],"d":[0.075,0.006,0.92],"sp":[0.355,0.496,0.148,0.413]},"9":{"s":[0.823,0.115,0.062],"h":[0.819,0.12,0.061],"d":[0.07,0.004,0.925],"sp":[0.303,0.517,0.179,0.219]},"10":{"s":[0.55,0.339,0.111],"h":[0.547,0.341,0.112],"d":[0.069,0.008,0.923],"sp":[0.248,0.512,0.24,-0.087]},"A":{"s":[0.482,0.149,0.369],"h":[0.485,0.146,0.369],"d":[0.048,0.028,0.924],"sp":[0.188,0.42,0.392,-0.508]}},"A":{"2":{"s":[0.355,0,0.645],"h":[0.5,0.08,0.421],"d":[0.458,0.051,0.491],"sp":[0.455,0.356,0.188,0.478]},"3":{"s":[0.379,0,0.621],"h":[0.518,0.07,0.413],"d":[0.475,0.048,0.477],"sp":[0.471,0.343,0.185,0.517]},"4":{"s":[0.398,0,0.602],"h":[0.533,0.051,0.416],"d":[0.493,0.046,0.461],"sp":[0.492,0.33,0.179,0.576]},"5":{"s":[0.421,0,0.579],"h":[0.553,0.049,0.399],"d":[0.511,0.046,0.443],"sp":[0.5,0.326,0.174,0.598]},"6":{"s":[0.442,0,0.558],"h":[0.566,0.049,0.385],"d":[0.525,0.043,0.432],"sp":[0.527,0.299,0.174,0.653]},"7":{"s":[0.261,0,0.739],"h":[0.534,0.092,0.373],"d":[0.423,0.055,0.522],"sp":[0.417,0.416,0.167,0.475]},"8":{"s":[0.245,0,0.755],"h":[0.489,0.113,0.398],"d":[0.388,0.059,0.553],"sp":[0.382,0.424,0.194,0.341]},"9":{"s":[0.227,0,0.773],"h":[0.443,0.116,0.441],"d":[0.36,0.058,0.582],"sp":[0.351,0.435,0.214,0.232]},"10":{"s":[0.217,0,0.783],"h":[0.38,0.116,0.504],"d":[0.313,0.065,0.622],"sp":[0.317,0.431,0.253,0.061]},"A":{"s":[0.142,0,0.858],"h":[0.288,0.133,0.578],"d":[0.217,0.069,0.714],"sp":[0.221,0.462,0.317,-0.359]}}}}}; // Table de probabilités précalculée hors ligne (Monte-Carlo, 20000 tirages/cellule, sabot frais, split des As limité à une carte par main) — aucun calcul en direct nécessaire pour l'afficher.
+
+function rankValue(r){
+  if(r==='A') return 11;
+  if(['V','D','R'].includes(r)) return 10;
+  return parseInt(r);
+}
+
+function hiLoValue(r){
+  if(['2','3','4','5','6'].includes(r)) return 1;
+  if(['7','8','9'].includes(r)) return 0;
+  return -1; // 10,V,D,R,A
+}
+
+function handTotal(cards){
+  let total = cards.reduce((s,r)=>s+rankValue(r),0);
+  let aces = cards.filter(r=>r==='A').length;
+  while(total>21 && aces>0){ total-=10; aces--; }
+  let soft = false;
+  if(cards.includes('A')){
+    let hardSum = cards.reduce((s,r)=> s + (r==='A'?1:rankValue(r)),0);
+    if(total===hardSum+10) soft = true;
+  }
+  return {total, soft};
+}
+
+// ---- Décision (stratégie de base + abandon), pure : opts = {dasAllowed, dealerHitsSoft17}
+function decide(playerCards, dealerRank, opts){
+  opts = opts || {dasAllowed:true, dealerHitsSoft17:false};
+  const dv = rankValue(dealerRank);
+  const n = playerCards.length;
+  const bothTen = n===2 && rankValue(playerCards[0])===10 && rankValue(playerCards[1])===10;
+  const bothAce = n===2 && playerCards[0]==='A' && playerCards[1]==='A';
+  const pairVal = n===2 ? rankValue(playerCards[0]) : null;
+  const trueSamePair = n===2 && (playerCards[0]===playerCards[1] || bothTen);
+  const {total, soft} = handTotal(playerCards);
+  function res(action, why){ return {action, why}; }
+
+  if(total>21){
+    return res('BUST', "Tu as dépassé 21 : la main est PERDUE, il n'y a plus rien à décider.");
+  }
+
+  if(n===2 && !soft){
+    const isPairEight = trueSamePair && pairVal===8;
+    if(isPairEight && dv===11){
+      return res('SURRENDER', "Paire de 8 contre As : l'abandon (perdre la moitié de la mise) est légèrement meilleur que le split si la table le propose ; sinon on sépare.");
+    }
+    if(!trueSamePair){
+      if(total===16 && (dv===9||dv===10||dv===11)){
+        return res('SURRENDER', "16 contre "+dealerRank+" : la pire main du jeu, on abandonne si possible, sinon on tire.");
+      }
+      if(total===15 && dv===10){
+        return res('SURRENDER', "15 contre 10 : on abandonne si la table le propose, sinon on tire.");
+      }
+      if(opts.dealerHitsSoft17 && total===15 && (dv===9||dv===11)){
+        return res('SURRENDER', "15 contre "+dealerRank+" (règle H17) : l'abandon devient rentable ici, sinon on tire.");
+      }
+    }
+  }
+
+  if(trueSamePair){
+    if(bothAce) return res('SPLIT', "Deux As : on sépare toujours.");
+    if(bothTen) return res('STAND', "Deux cartes de 10 : la main vaut déjà 20, on ne touche à rien.");
+    switch(pairVal){
+      case 9:
+        if([2,3,4,5,6,8,9].includes(dv)) return res('SPLIT', "Paire de 9 contre "+dealerRank+" : on sépare.");
+        return res('STAND', "Paire de 9 contre "+dealerRank+" : 18 tient mieux debout.");
+      case 8:
+        return res('SPLIT', "Paire de 8 : on sépare toujours (sauf abandon vu plus haut).");
+      case 7:
+        if(dv<=7) return res('SPLIT', "Paire de 7 contre carte faible ou moyenne : on sépare.");
+        return res('HIT', "Paire de 7 contre "+dealerRank+" : on tire.");
+      case 6:
+        if(dv===2) return opts.dasAllowed ? res('SPLIT', "Paire de 6 contre 2 : split correct seulement avec DAS.") : res('HIT', "Paire de 6 contre 2 sans DAS : on tire plutôt.");
+        if(dv>=3 && dv<=6) return res('SPLIT', "Paire de 6 contre carte faible : on sépare.");
+        return res('HIT', "Paire de 6 contre "+dealerRank+" : on tire.");
+      case 5:
+        if(dv<=9) return res('DOUBLE', "Paire de 5 = un 10 dur : on double.");
+        return res('HIT', "Paire de 5 contre "+dealerRank+" : on tire.");
+      case 4:
+        if(dv===5||dv===6) return opts.dasAllowed ? res('SPLIT', "Paire de 4 contre 5/6 : split correct seulement avec DAS.") : res('HIT', "Paire de 4 sans DAS : on tire plutôt.");
+        return res('HIT', "Paire de 4 contre "+dealerRank+" : on tire.");
+      case 3:
+      case 2:
+        if(dv===2||dv===3) return opts.dasAllowed ? res('SPLIT', "Paire de "+pairVal+" contre "+dealerRank+" : split correct seulement avec DAS.") : res('HIT', "Paire de "+pairVal+" sans DAS : on tire plutôt.");
+        if(dv>=4 && dv<=7) return res('SPLIT', "Paire de "+pairVal+" contre carte moyenne : on sépare.");
+        return res('HIT', "Paire de "+pairVal+" contre "+dealerRank+" : on tire.");
+    }
+  }
+
+  if(soft){
+    if(total>=19) return res('STAND', "Main souple de "+total+" : déjà solide, on reste.");
+    if(total===18){
+      if(dv>=9) return res('HIT', "As-7 contre "+dealerRank+" : trop fragile, on tire.");
+      if(dv>=3 && dv<=6) return res('DOUBLE', "As-7 contre carte faible : belle occasion de doubler.");
+      return res('STAND', "As-7 contre "+dealerRank+" : on reste.");
+    }
+    if(total===17){
+      if(dv>=3 && dv<=6) return res('DOUBLE', "Souple 17 contre carte faible : on double, sinon on tire.");
+      return res('HIT', "Souple 17 contre "+dealerRank+" : on tire.");
+    }
+    if(total===15||total===16){
+      if(dv>=4 && dv<=6) return res('DOUBLE', "Souple "+total+" contre carte faible : on double.");
+      return res('HIT', "Souple "+total+" contre "+dealerRank+" : on tire.");
+    }
+    if(total===13||total===14){
+      if(dv===5||dv===6) return res('DOUBLE', "Souple "+total+" contre 5 ou 6 : on double.");
+      return res('HIT', "Souple "+total+" contre "+dealerRank+" : on tire.");
+    }
+    return res('HIT', "Main souple faible : on tire sans risque.");
+  }
+
+  if(total>=17) return res('STAND', "Total dur de "+total+" : on reste.");
+  if(total>=13 && total<=16){
+    if(dv<=6) return res('STAND', "Total dur de "+total+" contre carte faible : on reste.");
+    return res('HIT', "Total dur de "+total+" contre "+dealerRank+" : on tire.");
+  }
+  if(total===12){
+    if(dv>=4 && dv<=6) return res('STAND', "12 contre carte faible : on reste.");
+    return res('HIT', "12 contre "+dealerRank+" : on tire.");
+  }
+  if(total===11){
+    if(dv<=10) return res('DOUBLE', "11 contre "+dealerRank+" : occasion idéale de doubler.");
+    return res('HIT', "11 contre As : on tire.");
+  }
+  if(total===10){
+    if(dv<=9) return res('DOUBLE', "10 contre "+dealerRank+" : on double.");
+    return res('HIT', "10 contre "+dealerRank+" : on tire.");
+  }
+  if(total===9){
+    if(dv>=3 && dv<=6) return res('DOUBLE', "9 contre carte faible : on double.");
+    return res('HIT', "9 contre "+dealerRank+" : on tire.");
+  }
+  return res('HIT', "Total de "+total+" : trop bas pour rester, on tire.");
+}
+
+const actionColors = { HIT:'var(--hit)', STAND:'var(--stand)', DOUBLE:'var(--double)', SPLIT:'var(--split)', SURRENDER:'var(--surrender)', BUST:'var(--bust)' };
+const actionLabels = { HIT:'TIRER', STAND:'RESTER', DOUBLE:'DOUBLER', SPLIT:'SÉPARER', SURRENDER:'ABANDONNER', BUST:'PERDU' };
+
+// ---- Tirage pondéré depuis un sabot fini (pure, mute une copie locale) ----
+function drawFromShoeArr(shoeArr){
+  let tot = 0;
+  for(let i=0;i<shoeArr.length;i++) tot += shoeArr[i];
+  if(tot<=0){
+    const idx = Math.floor(Math.random()*13);
+    return RANKS[idx];
+  }
+  let r = Math.random()*tot;
+  for(let i=0;i<shoeArr.length;i++){
+    if(r<shoeArr[i]){ shoeArr[i]--; return RANKS[i]; }
+    r -= shoeArr[i];
+  }
+  shoeArr[12] = Math.max(0, shoeArr[12]-1);
+  return RANKS[12];
+}
+
+function playOutHand(cards, dealerRank, shoeArr, opts){
+  let c = cards.slice();
+  while(true){
+    const {total} = handTotal(c);
+    if(total>21) return {total, bust:true};
+    const a = decide(c, dealerRank, opts).action;
+    if(a==='STAND') break;
+    c.push(drawFromShoeArr(shoeArr));
+  }
+  const f = handTotal(c);
+  return {total:f.total, bust:f.total>21};
+}
+
+function dealerPlayOut(dealerRank, shoeArr, dealerHitsSoft17){
+  let c = [dealerRank, drawFromShoeArr(shoeArr)];
+  while(true){
+    const {total, soft} = handTotal(c);
+    if(total>21) return {total, bust:true};
+    if(total>=17){
+      if(total===17 && soft && dealerHitsSoft17){ c.push(drawFromShoeArr(shoeArr)); continue; }
+      break;
+    }
+    c.push(drawFromShoeArr(shoeArr));
+  }
+  return {total:handTotal(c).total, bust:false};
+}
+
+function compareResult(player, dealer){
+  if(player.bust) return -1;
+  if(dealer.bust) return 1;
+  if(player.total>dealer.total) return 1;
+  if(player.total<dealer.total) return -1;
+  return 0;
+}
+
+function simulateStandOrHit(playerCards, dealerRank, mode, baseShoeArr, opts, trials, payout){
+  payout = payout || 1.5;
+  let win=0, push=0, lose=0, evSum=0;
+  const fixedTotal = handTotal(playerCards).total;
+  const playerHasNatural = mode==='stand' && playerCards.length===2 && fixedTotal===21;
+  for(let i=0;i<trials;i++){
+    const shoeArr = baseShoeArr.slice();
+    const dealerRes = dealerPlayOut(dealerRank, shoeArr, opts.dealerHitsSoft17);
+    let playerRes;
+    if(mode==='stand') playerRes = {total:fixedTotal, bust:fixedTotal>21};
+    else if(mode==='hit') playerRes = playOutHand(playerCards, dealerRank, shoeArr, opts);
+    else if(mode==='double'){
+      const c = playerCards.concat([drawFromShoeArr(shoeArr)]);
+      const t = handTotal(c).total;
+      playerRes = {total:t, bust:t>21};
+    }
+    const r = compareResult(playerRes, dealerRes);
+    if(r===1) win++; else if(r===0) push++; else lose++;
+    if(r===1) evSum += playerHasNatural ? payout : 1;
+    else if(r===-1) evSum -= 1;
+  }
+  return {win:win/trials, push:push/trials, lose:lose/trials, evUnit: evSum/trials};
+}
+
+function simulateSplit(playerCards, dealerRank, baseShoeArr, opts, trials){
+  const isAceSplit = playerCards[0]==='A' && playerCards[1]==='A';
+  let winBoth=0, loseBoth=0, mixed=0, unitSum=0;
+  for(let i=0;i<trials;i++){
+    const shoeArr = baseShoeArr.slice();
+    const dealerRes = dealerPlayOut(dealerRank, shoeArr, opts.dealerHitsSoft17);
+    let h1, h2;
+    if(isAceSplit){
+      // Règle standard : après avoir séparé une paire d'As, chaque main ne reçoit qu'UNE seule carte
+      // supplémentaire, sans droit de retirer davantage (même si le total est faible).
+      const c1 = [playerCards[0], drawFromShoeArr(shoeArr)];
+      const c2 = [playerCards[1], drawFromShoeArr(shoeArr)];
+      const t1 = handTotal(c1).total, t2 = handTotal(c2).total;
+      h1 = {total:t1, bust:t1>21};
+      h2 = {total:t2, bust:t2>21};
+    } else {
+      h1 = playOutHand([playerCards[0], drawFromShoeArr(shoeArr)], dealerRank, shoeArr, opts);
+      h2 = playOutHand([playerCards[1], drawFromShoeArr(shoeArr)], dealerRank, shoeArr, opts);
+    }
+    const r1 = compareResult(h1, dealerRes), r2 = compareResult(h2, dealerRes);
+    unitSum += r1+r2;
+    if(r1===1 && r2===1) winBoth++;
+    else if(r1===-1 && r2===-1) loseBoth++;
+    else mixed++;
+  }
+  return {winBoth:winBoth/trials, mixed:mixed/trials, loseBoth:loseBoth/trials, ev:unitSum/trials};
+}
+
+function fmtPct(x){ return (x*100).toFixed(1)+'%'; }
+
+// ---- Déviations de comptage (sous-ensemble simplifié inspiré des Illustrious 18) ----
+const DEVIATIONS = [
+  {test:(t,s,pair,dv)=> !s && t===16 && dv===10, tc:0, action:'STAND', label:'16 vs 10 : rester (au lieu de tirer/abandonner) dès TC ≥ 0'},
+  {test:(t,s,pair,dv)=> !s && t===15 && dv===10, tc:4, action:'STAND', label:'15 vs 10 : rester dès TC ≥ +4'},
+  {test:(t,s,pair,dv)=> pair==='1010' && dv===5, tc:5, action:'SPLIT', label:'10,10 vs 5 : séparer dès TC ≥ +5'},
+  {test:(t,s,pair,dv)=> pair==='1010' && dv===6, tc:4, action:'SPLIT', label:'10,10 vs 6 : séparer dès TC ≥ +4'},
+  {test:(t,s,pair,dv)=> !s && t===10 && dv===10, tc:4, action:'DOUBLE', label:'10 vs 10 : doubler dès TC ≥ +4'},
+  {test:(t,s,pair,dv)=> !s && t===12 && dv===3, tc:2, action:'STAND', label:'12 vs 3 : rester dès TC ≥ +2'},
+  {test:(t,s,pair,dv)=> !s && t===12 && dv===2, tc:3, action:'STAND', label:'12 vs 2 : rester dès TC ≥ +3'},
+  {test:(t,s,pair,dv)=> !s && t===11 && dv===11, tc:1, action:'DOUBLE', label:'11 vs As : doubler dès TC ≥ +1'},
+  {test:(t,s,pair,dv)=> !s && t===9 && dv===2, tc:1, action:'DOUBLE', label:'9 vs 2 : doubler dès TC ≥ +1'},
+  {test:(t,s,pair,dv)=> !s && t===16 && dv===9, tc:5, action:'STAND', label:'16 vs 9 : rester dès TC ≥ +5'},
+];
+function getDeviation(total, soft, playerCards, dv, tc){
+  const pairKey = (playerCards.length===2 && rankValue(playerCards[0])===rankValue(playerCards[1])) ? (rankValue(playerCards[0])===10?'1010':String(playerCards[0])+playerCards[0]) : null;
+  for(const d of DEVIATIONS){
+    if(d.test(total, soft, pairKey, dv) && tc>=d.tc){
+      return d;
+    }
+  }
+  return null;
+}
+
+function kellySuggestion(trueCount, bankroll, payout){
+  // Avantage ≈ avantage de base de la maison (négatif) + ~0,5% par unité de True Count.
+  // Avantage de base : ~ -0,5% en 3:2, nettement pire (~ -1,5%) en 6:5 (le paiement réduit
+  // à lui seul retire environ 1,4 point d'avantage au joueur).
+  const baseEdge = (payout && payout<1.4) ? -0.015 : -0.005;
+  const edge = baseEdge + trueCount*0.005;
+  if(edge<=0) return {edge, fraction:0, bet:0};
+  const fraction = Math.min(edge/1.3, 0.05); // plafonné à 5% du capital par prudence
+  return {edge, fraction, bet: bankroll*fraction};
+}
+
+// ================= État de l'application =================
+const config = { numDecks:6, dealerHitsSoft17:false, dasAllowed:true, blackjackPayout:1.5, tableStyle:'real' };
+let shoeArr = [];
+let runningCount = 0;
+
+let dealerCard = null, dealerSuit = null;
+let playerCards = [], playerSuits = [];
+let dealTarget = 'dealer';
+let lastDecision = null;
+let handSituation = 'simple';
+
+const SUITS = [
+  {sym:'♠', color:'black', key:'S'},
+  {sym:'♥', color:'red', key:'H'},
+  {sym:'♦', color:'red', key:'D'},
+  {sym:'♣', color:'black', key:'C'},
+];
+
+function currentOpts(){ return {dasAllowed:config.dasAllowed, dealerHitsSoft17:config.dealerHitsSoft17}; }
+
+function resetShoe(clearTable){
+  shoeArr = RANKS.map(()=>config.numDecks*4);
+  runningCount = 0;
+  if(clearTable){
+    dealerCard=null; dealerSuit=null; playerCards=[]; playerSuits=[];
+    renderDealerZone(); renderPlayerZone();
+  }
+  setTarget('dealer'); // toujours ramener le curseur de distribution sur le croupier
+  updateCountDisplay();
+  evaluate();
+}
+
+function decrementShoeForCard(rank){
+  const idx = RANKS.indexOf(rank);
+  if(shoeArr[idx]>0) shoeArr[idx]--;
+  runningCount += hiLoValue(rank);
+  updateCountDisplay();
+}
+function incrementShoeForCard(rank){
+  const idx = RANKS.indexOf(rank);
+  shoeArr[idx]++;
+  runningCount -= hiLoValue(rank);
+  updateCountDisplay();
+}
+
+function updateCountDisplay(){
+  const totalRemaining = shoeArr.reduce((a,b)=>a+b,0);
+  const decksLeft = Math.max(totalRemaining/52, 0.25);
+  const trueCount = runningCount/decksLeft;
+  document.getElementById('runningCountVal').textContent = runningCount>0?('+'+runningCount):runningCount;
+  document.getElementById('trueCountVal').textContent = (trueCount>0?'+':'')+trueCount.toFixed(1);
+  document.getElementById('decksLeftVal').textContent = decksLeft.toFixed(1);
+  refreshKelly(trueCount);
+}
+
+function refreshKelly(trueCount){
+  const bankroll = parseFloat(document.getElementById('bankroll').value)||0;
+  const k = kellySuggestion(trueCount, bankroll, config.blackjackPayout);
+  const el = document.getElementById('kellySuggest');
+  if(k.fraction<=0){
+    el.textContent = 'Avantage estimé ≈ '+(k.edge*100).toFixed(2)+'% (encore à la maison) : aucune surmise conseillée, reste sur ta mise de base ou mise minimum.';
+  } else {
+    el.textContent = 'Avantage estimé ≈ +'+(k.edge*100).toFixed(2)+'% → mise suggérée (Kelly plafonné) ≈ '+k.bet.toFixed(2)+'€. Approximation grossière, forte variance réelle, à ajuster selon ta tolérance au risque.';
+  }
+}
+
+function makeCardEl(rank, suit, onTap, big){
+  const el = document.createElement('div');
+  el.className = 'playing-card ' + suit.color + (big?' big':'');
+  el.innerHTML =
+    '<div class="corner">'+rank+'<br>'+suit.sym+'</div>' +
+    '<div class="suit-big">'+suit.sym+'</div>' +
+    '<div class="corner bottom">'+rank+'<br>'+suit.sym+'</div>';
+  if(onTap) el.addEventListener('click', onTap);
+  return el;
+}
+
+function haptic(ms){
+  if('vibrate' in navigator){ try{ navigator.vibrate(ms||15); }catch(e){} }
+}
+
+function dealToTarget(rank){
+  haptic(15);
+  const suit = SUITS[Math.floor(Math.random()*4)];
+  decrementShoeForCard(rank);
+  if(dealTarget==='dealer'){
+    dealerCard = rank; dealerSuit = suit;
+    renderDealerZone();
+    setTarget('player');
+  } else {
+    playerCards.push(rank); playerSuits.push(suit);
+    renderPlayerZone();
+  }
+  evaluate();
+}
+
+function undoLastCard(){
+  haptic(12);
+  if(playerCards.length>0){
+    const r = playerCards.pop(); playerSuits.pop();
+    incrementShoeForCard(r);
+    renderPlayerZone();
+  } else if(dealerCard){
+    incrementShoeForCard(dealerCard);
+    dealerCard=null; dealerSuit=null;
+    renderDealerZone();
+  }
+  evaluate();
+}
+
+// --- trays ---
+const tray = document.getElementById('cardTray');
+RANKS.forEach(r=>{
+  const b = document.createElement('button');
+  b.className = 'tray-card';
+  b.textContent = r;
+  b.addEventListener('click', ()=> dealToTarget(r));
+  tray.appendChild(b);
+});
+const extraTray = document.getElementById('extraTray');
+RANKS.forEach(r=>{
+  const b = document.createElement('button');
+  b.className = 'tray-card';
+  b.textContent = r;
+  b.addEventListener('click', ()=>{ haptic(15); decrementShoeForCard(r); evaluate(); });
+  extraTray.appendChild(b);
+});
+
+function setTarget(t){
+  dealTarget = t;
+  document.getElementById('btnTargetDealer').classList.toggle('active', t==='dealer');
+  document.getElementById('btnTargetPlayer').classList.toggle('active', t==='player');
+  document.querySelector('.dealer-zone').classList.toggle('zone-focused', t==='dealer');
+  document.querySelector('.player-zone').classList.toggle('zone-focused', t==='player');
+}
+document.getElementById('btnTargetDealer').addEventListener('click', ()=>{ haptic(12); setTarget('dealer'); });
+document.getElementById('btnTargetPlayer').addEventListener('click', ()=>{ haptic(12); setTarget('player'); });
+
+document.getElementById('resetHand').addEventListener('click', ()=>{
+  dealerCard=null; dealerSuit=null; playerCards=[]; playerSuits=[];
+  renderDealerZone(); renderPlayerZone(); setTarget('dealer'); evaluate();
+});
+document.getElementById('resetShoe').addEventListener('click', ()=> resetShoe(true));
+
+function renderDealerZone(){
+  const row = document.getElementById('dealerCardsRow');
+  row.innerHTML = '';
+  if(dealerCard===null){ row.innerHTML = '<div class="empty-slot"></div>'; }
+  else {
+    row.appendChild(makeCardEl(dealerCard, dealerSuit, ()=>{
+      incrementShoeForCard(dealerCard);
+      dealerCard=null; dealerSuit=null; renderDealerZone(); evaluate();
+    }));
+  }
+  document.getElementById('dealerTotal').textContent = dealerCard ? 'montre '+dealerCard : '';
+}
+function renderPlayerZone(){
+  const row = document.getElementById('playerCardsRow');
+  row.innerHTML = '';
+  if(playerCards.length===0){ row.innerHTML = '<div class="empty-slot"></div><div class="empty-slot"></div>'; }
+  else {
+    playerCards.forEach((r,i)=>{
+      row.appendChild(makeCardEl(r, playerSuits[i], ()=>{
+        incrementShoeForCard(playerCards[i]);
+        playerCards.splice(i,1); playerSuits.splice(i,1);
+        renderPlayerZone(); evaluate();
+      }));
+    });
+  }
+  const t = document.getElementById('playerTotal');
+  if(playerCards.length>0){ const {total, soft} = handTotal(playerCards); t.textContent = (soft?'souple ':'') + total; }
+  else t.textContent = '';
+}
+
+// ---- Clavier (actif seulement sur l'onglet Live) ----
+document.addEventListener('keydown', (e)=>{
+  if(document.activeElement && document.activeElement.tagName==='INPUT') return;
+  if(currentTab !== 'live') return;
+  const k = e.key;
+  if(k>='2' && k<='9'){ dealToTarget(k); return; }
+  if(k==='0'){ dealToTarget('10'); return; }
+  const up = k.toUpperCase();
+  if(['V','D','R','A'].includes(up)){ dealToTarget(up); return; }
+  if(k==='Tab'){ e.preventDefault(); setTarget(dealTarget==='dealer'?'player':'dealer'); return; }
+  if(k==='Backspace'){ e.preventDefault(); undoLastCard(); return; }
+});
+
+// ================= Side bets =================
+function rankOrderValue(r){
+  if(r==='A') return 14; if(r==='V') return 11; if(r==='D') return 12; if(r==='R') return 13;
+  return parseInt(r);
+}
+function isStraightOrders(orders){
+  const uniq = new Set(orders);
+  if(uniq.size!==3) return false;
+  const check = (arr)=>{ const s=[...arr].sort((a,b)=>a-b); return s[1]-s[0]===1 && s[2]-s[1]===1; };
+  if(check(orders)) return true;
+  return check(orders.map(o=> o===14?1:o));
+}
+function perfectPairsResult(){
+  if(playerCards.length<2) return null;
+  const r1=playerCards[0], r2=playerCards[1], s1=playerSuits[0], s2=playerSuits[1];
+  if(r1!==r2) return 'none';
+  if(s1.key===s2.key) return 'perfect';
+  if(s1.color===s2.color) return 'colored';
+  return 'mixed';
+}
+function twentyOnePlus3Result(){
+  if(playerCards.length<2 || !dealerCard) return null;
+  const ranks=[playerCards[0],playerCards[1],dealerCard];
+  const suits=[playerSuits[0],playerSuits[1],dealerSuit];
+  const orders=ranks.map(rankOrderValue);
+  const sameRank = ranks[0]===ranks[1] && ranks[1]===ranks[2];
+  const sameSuit = suits[0].key===suits[1].key && suits[1].key===suits[2].key;
+  const straight = isStraightOrders(orders);
+  if(sameRank && sameSuit) return 'suited_trips';
+  if(straight && sameSuit) return 'straight_flush';
+  if(sameRank) return 'three_kind';
+  if(straight) return 'straight';
+  if(sameSuit) return 'flush';
+  return 'none';
+}
+const PP_LABELS = { perfect:{label:'Paire parfaite',payout:'≈ 25:1',hit:true}, colored:{label:'Paire colorée',payout:'≈ 12:1',hit:true}, mixed:{label:'Paire mélangée',payout:'≈ 6:1',hit:true}, none:{label:'Pas de paire',payout:'',hit:false} };
+const T3_LABELS = { suited_trips:{label:'Brelan assorti',payout:'≈ 100:1',hit:true}, straight_flush:{label:'Quinte flush',payout:'≈ 40:1',hit:true}, three_kind:{label:'Brelan',payout:'≈ 30:1',hit:true}, straight:{label:'Quinte',payout:'≈ 10:1',hit:true}, flush:{label:'Couleur',payout:'≈ 5:1',hit:true}, none:{label:'Rien ne passe',payout:'',hit:false} };
+function sbRow(name, html){ return '<div class="sidebet-row"><span class="sb-name">'+name+'</span><span class="sb-result">'+html+'</span></div>'; }
+function renderSideBets(){
+  const panel = document.getElementById('sideBetsPanel');
+  let html='';
+  const pp = perfectPairsResult();
+  html += sbRow('Perfect Pairs', pp===null ? '<span style="opacity:.5">en attente de tes 2 cartes</span>' : (()=>{ const d=PP_LABELS[pp]; return '<span class="'+(d.hit?'hit':'miss')+'">'+d.label+(d.payout?' · '+d.payout:'')+'</span>'; })());
+  const t3 = twentyOnePlus3Result();
+  html += sbRow('21+3', t3===null ? '<span style="opacity:.5">en attente de tes 2 cartes + croupier</span>' : (()=>{ const d=T3_LABELS[t3]; return '<span class="'+(d.hit?'hit':'miss')+'">'+d.label+(d.payout?' · '+d.payout:'')+'</span>'; })());
+  if(dealerCard==='A'){ html += sbRow('Assurance', '<span style="opacity:.7">≈30.8% que le croupier ait Blackjack — mise perdante en moyenne (paye 2:1 pour une chance <1/3)</span>'); }
+  else html += sbRow('Assurance', '<span style="opacity:.5">seulement si le croupier montre un As</span>');
+  panel.innerHTML = html;
+}
+
+function evaluate(){
+  const verdict = document.getElementById('verdict');
+  const actionEl = document.getElementById('actionText');
+  const whyEl = document.getElementById('whyText');
+  const verdictProbEl = document.getElementById('verdictProb');
+  const devTag = document.getElementById('deviationTag');
+
+  renderSideBets();
+  highlightStrategyCell();
+
+  if(!dealerCard || playerCards.length<2){
+    lastDecision = null;
+    actionEl.textContent = '—';
+    actionEl.style.color = 'var(--gold)';
+    verdict.classList.remove('bust-state');
+    whyEl.textContent = 'Sélectionne la carte du croupier et tes deux premières cartes.';
+    verdictProbEl.textContent = '';
+    devTag.innerHTML='';
+    renderProbabilities();
+    document.getElementById('deviationAlertBox').innerHTML='';
+    return;
+  }
+
+  const opts = currentOpts();
+  const {action, why} = decide(playerCards, dealerCard, opts);
+  lastDecision = {action, why};
+
+  actionEl.textContent = actionLabels[action];
+  actionEl.style.color = actionColors[action];
+  verdict.classList.toggle('bust-state', action==='BUST');
+  const ht = handTotal(playerCards);
+  if(action==='BUST'){
+    whyEl.textContent = "Tu as dépassé 21 avec un total de " + ht.total + " : la main est PERDUE, il n'y a plus rien à jouer.";
+    verdictProbEl.textContent = '0% de gain — mise perdue';
+    devTag.innerHTML='';
+  } else {
+    whyEl.textContent = why + ' (main '+(ht.soft?'souple':'dure')+' '+ht.total+' vs '+dealerCard+')';
+  }
+
+  // Déviation de comptage
+  const totalRemaining = shoeArr.reduce((a,b)=>a+b,0);
+  const decksLeft = Math.max(totalRemaining/52, 0.25);
+  const trueCount = runningCount/decksLeft;
+  const dv = rankValue(dealerCard);
+  const dev = (action!=='BUST') ? getDeviation(ht.total, ht.soft, playerCards, dv, trueCount) : null;
+  const devBox = document.getElementById('deviationAlertBox');
+  if(dev){
+    devTag.innerHTML = '<span class="deviation-tag">Déviation TC ≥ '+dev.tc+' : '+actionLabels[dev.action]+'</span>';
+    devBox.innerHTML = '<div class="deviation-alert">📊 True Count actuel ('+trueCount.toFixed(1)+') déclenche une déviation connue : <b>'+dev.label+'</b>. Ceci prime sur la stratégie de base affichée ci-dessus si tu comptes réellement les cartes.</div>';
+  } else if(dealerCard==='A' && trueCount>=3){
+    devBox.innerHTML = '<div class="deviation-alert">📊 True Count ≥ +3 avec un As du croupier : l\u2019assurance devient rentable statistiquement (déviation classique).</div>';
+  } else {
+    devBox.innerHTML='';
+  }
+
+  renderProbabilities();
+}
+
+// ================= Lecture instantanée de la table précalculée =================
+// Plus aucune simulation en direct : PROB_TABLE contient déjà, pour chaque main
+// possible x carte du croupier x règle S17/H17, le résultat d'une simulation
+// Monte-Carlo à 20 000 tirages faite une fois pour toutes hors ligne.
+function shoeRankCount(shoeArr, ranks){
+  return ranks.reduce((s,r)=> s + shoeArr[RANKS.indexOf(r)], 0);
+}
+function lookupProbCell(playerCards, dealerRank, opts){
+  const variant = opts.dealerHitsSoft17 ? 'H17' : 'S17';
+  const table = PROB_TABLE[variant];
+  const n = playerCards.length;
+  const bothTen = n===2 && rankValue(playerCards[0])===10 && rankValue(playerCards[1])===10;
+  const trueSamePair = n===2 && (playerCards[0]===playerCards[1] || bothTen);
+  const {total, soft} = handTotal(playerCards);
+  const col = rankValue(dealerRank)===10 ? '10' : dealerRank;
+  if(trueSamePair){
+    const pk = playerCards[0]==='A' ? 'A' : (bothTen ? '10' : String(rankValue(playerCards[0])));
+    return {kind:'pair', cell: table.pair[pk][col], approx:false};
+  }
+  if(soft){
+    const t = Math.min(Math.max(total,13),20);
+    return {kind:'soft', cell: table.soft[t][col], approx: t!==total};
+  }
+  const t = Math.min(Math.max(total,5),20);
+  return {kind:'hard', cell: table.hard[t][col], approx: t!==total};
+}
+
+function renderProbabilities(){
+  const panel = document.getElementById('probPanel');
+  const noteEl = document.getElementById('probNote');
+  const splitAdviceEl = document.getElementById('splitAdvice');
+  if(!dealerCard || playerCards.length<2){
+    panel.innerHTML = '<span class="prob-empty">Sélectionne la carte du croupier et tes deux premières cartes.</span>';
+    noteEl.textContent = ''; splitAdviceEl.innerHTML = '';
+    return;
+  }
+  if(lastDecision && lastDecision.action==='BUST'){
+    panel.innerHTML = '<span class="prob-empty">Main terminée : dépassement de 21, mise perdue. Aucune décision possible.</span>';
+    noteEl.textContent = ''; splitAdviceEl.innerHTML = '';
+    return;
+  }
+
+  const opts = currentOpts();
+  const ht = handTotal(playerCards);
+
+  // Blackjack naturel (2 cartes, total 21) : pas dans la table (rien à décider), calcul analytique direct
+  if(playerCards.length===2 && ht.total===21){
+    const isRobot = config.tableStyle==='robot';
+    const dv = rankValue(dealerCard);
+    let pPush = 0;
+    if(dealerCard==='A'){ pPush = isRobot ? 4/13 : shoeRankCount(shoeArr,['10','V','D','R'])/Math.max(shoeArr.reduce((a,b)=>a+b,0),1); }
+    else if(dv===10){ pPush = isRobot ? 1/13 : shoeRankCount(shoeArr,['A'])/Math.max(shoeArr.reduce((a,b)=>a+b,0),1); }
+    const win = 1-pPush;
+    panel.innerHTML = `
+      <div class="prob-row">
+        <div class="label">Rester (Blackjack ${config.blackjackPayout===1.5?'3:2':'6:5'})<span class="best-tag">meilleure EV</span></div>
+        <div class="bars"><div class="bar-win" style="flex:${win}"></div><div class="bar-push" style="flex:${pPush}"></div><div class="bar-lose" style="flex:0"></div></div>
+        <div class="pct">${fmtPct(win)} gain · ${fmtPct(pPush)} égalité</div>
+      </div>`;
+    splitAdviceEl.innerHTML = '';
+    noteEl.textContent = 'Blackjack naturel : calcul analytique direct (pas de simulation nécessaire) — seule une carte cachée du croupier formant elle aussi 21 donne une égalité.';
+    document.getElementById('verdictProb').textContent = '≈' + fmtPct(win) + ' de gagner (sinon égalité)';
+    return;
+  }
+
+  const {kind, cell, approx} = lookupProbCell(playerCards, dealerCard, opts);
+  const rows = [
+    {key:'STAND', label:'Rester', res:{win:cell.s[0],push:cell.s[1],lose:cell.s[2]}, ev: cell.s[0]-cell.s[2]},
+    {key:'HIT', label:'Tirer', res:{win:cell.h[0],push:cell.h[1],lose:cell.h[2]}, ev: cell.h[0]-cell.h[2]},
+  ];
+  if(playerCards.length===2){
+    rows.push({key:'DOUBLE', label:'Doubler', res:{win:cell.d[0],push:cell.d[1],lose:cell.d[2]}, ev: 2*(cell.d[0]-cell.d[2])});
+    rows.push({key:'SURRENDER', label:'Abandonner (demi-mise)', res:{win:0,push:0,lose:1}, ev:-0.5});
+  }
+  let splitRes = null;
+  if(kind==='pair'){ splitRes = {winBoth:cell.sp[0], mixed:cell.sp[1], loseBoth:cell.sp[2], ev:cell.sp[3]}; }
+
+  let best = rows.reduce((a,b)=> b.ev>a.ev?b:a, rows[0]);
+  if(splitRes && splitRes.ev>best.ev){ best = {key:'SPLIT'}; }
+
+  panel.innerHTML = '';
+  rows.forEach(r=>{
+    const div = document.createElement('div');
+    div.className='prob-row';
+    div.innerHTML = `
+      <div class="label">${r.label}${r.key===best.key?'<span class="best-tag">meilleure EV</span>':''}</div>
+      <div class="bars">
+        <div class="bar-win" style="flex:${r.res.win}"></div>
+        <div class="bar-push" style="flex:${r.res.push}"></div>
+        <div class="bar-lose" style="flex:${r.res.lose}"></div>
+      </div>
+      <div class="pct">${fmtPct(r.res.win)} gain · ${fmtPct(r.res.lose)} perte</div>
+    `;
+    panel.appendChild(div);
+  });
+  splitAdviceEl.innerHTML = '';
+  if(splitRes){
+    const div = document.createElement('div');
+    div.className='prob-row';
+    div.innerHTML = `
+      <div class="label">Séparer${best.key==='SPLIT'?'<span class="best-tag">meilleure EV</span>':''}</div>
+      <div class="bars">
+        <div class="bar-win" style="flex:${splitRes.winBoth}"></div>
+        <div class="bar-push" style="flex:${splitRes.mixed}"></div>
+        <div class="bar-lose" style="flex:${splitRes.loseBoth}"></div>
+      </div>
+      <div class="pct">${fmtPct(splitRes.winBoth)} 2 mains gagnées</div>
+    `;
+    panel.appendChild(div);
+    const bestNonSplitWin = Math.max(...rows.filter(r=>r.key!=='SURRENDER').map(r=>r.res.win));
+    const gap = splitRes.winBoth - bestNonSplitWin;
+    if(gap > 0.30){
+      splitAdviceEl.innerHTML = '<div class="deviation-alert" style="background:rgba(74,154,114,.18); border-color:rgba(74,154,114,.4); color:#bfe8d2;">🃏 <b>Split fortement recommandé</b> : gagner tes 2 mains a '+fmtPct(gap)+' de probabilité en plus que la meilleure option sans séparer (' + fmtPct(bestNonSplitWin) + ').</div>';
+    }
+  }
+  noteEl.textContent = 'Résultat déjà intégré au site (table précalculée hors ligne, 20 000 tirages/cellule, sabot frais) — affichage instantané, aucun calcul en direct.' + (approx ? ' Total exact hors barème habituel : valeur la plus proche utilisée (≈).' : '');
+
+  const verdictProbEl = document.getElementById('verdictProb');
+  if(lastDecision){
+    if(lastDecision.action==='SURRENDER'){
+      verdictProbEl.textContent = 'Perte garantie de 50% de la mise (mais moins pire que jouer la main)';
+    } else if(lastDecision.action==='SPLIT' && splitRes){
+      verdictProbEl.textContent = '≈' + fmtPct(splitRes.winBoth) + ' de gagner tes 2 mains';
+    } else {
+      const matchRow = rows.find(r=>r.key===lastDecision.action);
+      if(matchRow) verdictProbEl.textContent = '≈' + fmtPct(matchRow.res.win) + ' de gagner cette main';
+    }
+  }
+}
+
+
+// ================= Grille de stratégie complète =================
+const GRID_COLS = ['2','3','4','5','6','7','8','9','10','A'];
+function gridHardRow(total){ // représentant à 2 cartes, évite les paires accidentelles sauf pour 20
+  const map = {20:['R','10'],19:['9','10'],18:['8','10'],17:['7','10'],16:['6','10'],15:['5','10'],14:['4','10'],13:['3','10'],12:['2','10'],11:['5','6'],10:['4','6'],9:['4','5'],8:['3','5'],7:['3','4'],6:['2','4'],5:['2','3']};
+  return map[total];
+}
+function gridSoftRow(total){ return ['A', String(total-11)]; } // A+n = 11+n
+function gridPairRow(key){
+  if(key==='AA') return ['A','A'];
+  if(key==='1010') return ['10','10'];
+  return [key[0], key[0]];
+}
+function buildStrategyGrid(){
+  const opts = currentOpts();
+  const rows = [];
+  for(let t=20;t>=5;t--) rows.push({label:'Dur '+t, cards:gridHardRow(t), rowKey:'H'+t});
+  for(let t=20;t>=13;t--) rows.push({label:'Souple '+t, cards:gridSoftRow(t), rowKey:'S'+t});
+  ['AA','9','8','7','6','5','4','3','2'].forEach(k=>{
+    const cards = k==='AA' ? ['A','A'] : [k,k];
+    rows.push({label: k==='AA' ? "Paire d'As" : 'Paire de '+k, cards, rowKey:'P'+k});
+  });
+  rows.push({label:'Paire de 10', cards:['10','10'], rowKey:'P10'});
+
+  let html = '<table class="strategy-table"><thead><tr><th>Toi / Croupier</th>';
+  GRID_COLS.forEach(c=> html += '<th>'+c+'</th>');
+  html += '</tr></thead><tbody>';
+  const ABBR = {HIT:'H',STAND:'S',DOUBLE:'D',SPLIT:'P',SURRENDER:'R',BUST:'-'};
+  rows.forEach(row=>{
+    html += '<tr><td class="rowhead">'+row.label+'</td>';
+    GRID_COLS.forEach(col=>{
+      const dRank = col; // '10' représente toutes les cartes à 10
+      const {action} = decide(row.cards, dRank, opts);
+      const abbr = ABBR[action] || '?';
+      html += '<td class="a-'+abbr+'" id="gcell-'+row.rowKey+'-'+col+'">'+abbr+'</td>';
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table><div class="prob-note">H=Tirer · S=Rester · D=Doubler · P=Séparer · R=Abandonner (sinon jouer la main normalement)</div>';
+  document.getElementById('strategyGrid').innerHTML = html;
+}
+function currentRowKey(){
+  if(!dealerCard || playerCards.length<2) return null;
+  const n = playerCards.length;
+  const bothTen = n===2 && rankValue(playerCards[0])===10 && rankValue(playerCards[1])===10;
+  const trueSamePair = n===2 && (playerCards[0]===playerCards[1] || bothTen);
+  const {total, soft} = handTotal(playerCards);
+  if(trueSamePair){
+    if(playerCards[0]==='A') return 'PAA';
+    if(bothTen) return 'P10';
+    return 'P'+rankValue(playerCards[0]);
+  }
+  if(soft){ const t = Math.min(Math.max(total,13),20); return 'S'+t; }
+  const t = Math.min(Math.max(total,5),20);
+  return 'H'+t;
+}
+function highlightStrategyCell(){
+  document.querySelectorAll('#strategyGrid td.hl').forEach(td=>td.classList.remove('hl'));
+  const rk = currentRowKey();
+  if(!rk) return;
+  const col = rankValue(dealerCard)===10 ? '10' : dealerCard;
+  const cell = document.getElementById('gcell-'+rk+'-'+col);
+  if(cell) cell.classList.add('hl');
+}
+
+// ================= Réglages =================
+function wireToggle(idOn, idOff, onValue, applyFn){
+  document.getElementById(idOn).addEventListener('click', ()=>{
+    document.getElementById(idOn).classList.add('active');
+    document.getElementById(idOff).classList.remove('active');
+    applyFn(true);
+  });
+  document.getElementById(idOff).addEventListener('click', ()=>{
+    document.getElementById(idOff).classList.add('active');
+    document.getElementById(idOn).classList.remove('active');
+    applyFn(false);
+  });
+}
+document.getElementById('setDecks').addEventListener('change', (e)=>{
+  config.numDecks = parseInt(e.target.value);
+  resetShoe(true);
+});
+document.getElementById('setPayout').addEventListener('change', (e)=>{
+  config.blackjackPayout = parseFloat(e.target.value);
+});
+wireToggle('setS17','setH17', true, (isS17)=>{ config.dealerHitsSoft17 = !isS17; buildStrategyGrid(); evaluate(); });
+wireToggle('setDasOn','setDasOff', true, (isOn)=>{ config.dasAllowed = isOn; buildStrategyGrid(); evaluate(); });
+
+function applyTableStyle(style){
+  config.tableStyle = style;
+  document.getElementById('setTableReal').classList.toggle('active', style==='real');
+  document.getElementById('setTableRobot').classList.toggle('active', style==='robot');
+  const isRobot = style==='robot';
+  document.getElementById('countingPanel').style.display = isRobot ? 'none' : '';
+  document.getElementById('decksSettingWrap').style.display = isRobot ? 'none' : '';
+  document.getElementById('robotNote').style.display = isRobot ? '' : 'none';
+  evaluate();
+}
+document.getElementById('setTableReal').addEventListener('click', ()=> applyTableStyle('real'));
+document.getElementById('setTableRobot').addEventListener('click', ()=> applyTableStyle('robot'));
+
+// ================= Bankroll / résolution des mises =================
+const history = document.getElementById('history');
+function logHistory(text){ const d=document.createElement('div'); d.textContent=text; history.prepend(d); }
+function applyDelta(delta, label){
+  const bankrollInput = document.getElementById('bankroll');
+  const br = parseFloat(bankrollInput.value)||0;
+  bankrollInput.value = (br+delta).toFixed(2);
+  logHistory((delta>=0?'+ ':'− ') + Math.abs(delta).toFixed(2) + ' € — '+label+' — bankroll : '+bankrollInput.value+' €');
+  updateCountDisplay();
+}
+function mise(){ return parseFloat(document.getElementById('miseBase').value)||0; }
+
+function renderResolveButtons(){
+  const el = document.getElementById('resolveButtons');
+  const m = mise();
+  if(handSituation==='simple'){
+    el.innerHTML = '';
+    const row = document.createElement('div'); row.className='btn-row';
+    const btns = [
+      {cls:'win', label:'Gagné', fn:()=>applyDelta(m,'gagné')},
+      {cls:'win', label:'Gagné Blackjack ('+(config.blackjackPayout===1.5?'3:2':'6:5')+')', fn:()=>applyDelta(m*config.blackjackPayout,'blackjack')},
+      {cls:'lose', label:'Perdu', fn:()=>applyDelta(-m,'perdu')},
+      {cls:'push', label:'Égalité', fn:()=>applyDelta(0,'égalité (push)')},
+    ];
+    btns.forEach(b=>{ const btn=document.createElement('button'); btn.className=b.cls; btn.textContent=b.label; btn.addEventListener('click', b.fn); row.appendChild(btn); });
+    el.appendChild(row);
+  } else if(handSituation==='double'){
+    el.innerHTML = '';
+    const row = document.createElement('div'); row.className='btn-row';
+    const btns = [
+      {cls:'win', label:'Gagné (x2)', fn:()=>applyDelta(2*m,'doublé gagné')},
+      {cls:'lose', label:'Perdu (x2)', fn:()=>applyDelta(-2*m,'doublé perdu')},
+      {cls:'push', label:'Égalité', fn:()=>applyDelta(0,'doublé égalité')},
+    ];
+    btns.forEach(b=>{ const btn=document.createElement('button'); btn.className=b.cls; btn.textContent=b.label; btn.addEventListener('click', b.fn); row.appendChild(btn); });
+    el.appendChild(row);
+  } else if(handSituation==='split'){
+    el.innerHTML = '<div class="hr-title">Main 1 :</div>';
+    const row1 = document.createElement('div'); row1.className='btn-row';
+    ['Gagné','Perdu','Égalité'].forEach(lbl=>{
+      const btn=document.createElement('button');
+      btn.className = lbl==='Gagné'?'win':lbl==='Perdu'?'lose':'push';
+      btn.textContent=lbl+' (main 1)';
+      btn.addEventListener('click', ()=> applyDelta(lbl==='Gagné'?m:lbl==='Perdu'?-m:0, 'split main 1 '+lbl.toLowerCase()));
+      row1.appendChild(btn);
+    });
+    el.appendChild(row1);
+    const t2 = document.createElement('div'); t2.className='hr-title'; t2.style.marginTop='8px'; t2.textContent='Main 2 :';
+    el.appendChild(t2);
+    const row2 = document.createElement('div'); row2.className='btn-row';
+    ['Gagné','Perdu','Égalité'].forEach(lbl=>{
+      const btn=document.createElement('button');
+      btn.className = lbl==='Gagné'?'win':lbl==='Perdu'?'lose':'push';
+      btn.textContent=lbl+' (main 2)';
+      btn.addEventListener('click', ()=> applyDelta(lbl==='Gagné'?m:lbl==='Perdu'?-m:0, 'split main 2 '+lbl.toLowerCase()));
+      row2.appendChild(btn);
+    });
+    el.appendChild(row2);
+  }
+}
+function wireSituation(id, val){
+  document.getElementById(id).addEventListener('click', ()=>{
+    ['sitSimple','sitDouble','sitSplit'].forEach(i=>document.getElementById(i).classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    handSituation = val;
+    renderResolveButtons();
+  });
+}
+wireSituation('sitSimple','simple'); wireSituation('sitDouble','double'); wireSituation('sitSplit','split');
+document.getElementById('bankroll').addEventListener('input', ()=>{
+  const totalRemaining = shoeArr.reduce((a,b)=>a+b,0);
+  const decksLeft = Math.max(totalRemaining/52, 0.25);
+  refreshKelly(runningCount/decksLeft);
+});
+
+// ================= Mode entraînement =================
+let trainScore=0, trainTotal=0, trainTimerInt=null, trainStart=0, trainCurrent=null;
+let trainButtonEls = {};
+function generateTrainingHand(){
+  const forcedPair = Math.random()<0.25;
+  let p1 = RANKS[Math.floor(Math.random()*13)];
+  let p2 = forcedPair ? p1 : RANKS[Math.floor(Math.random()*13)];
+  const d = RANKS[Math.floor(Math.random()*13)];
+  trainCurrent = {cards:[p1,p2], dealer:d};
+  const pc = document.getElementById('trainPlayerCards'); pc.innerHTML='';
+  const dc = document.getElementById('trainDealerCard'); dc.innerHTML='';
+  pc.appendChild(makeCardEl(p1, SUITS[Math.floor(Math.random()*4)], null, true));
+  pc.appendChild(makeCardEl(p2, SUITS[Math.floor(Math.random()*4)], null, true));
+  dc.appendChild(makeCardEl(d, SUITS[Math.floor(Math.random()*4)], null, true));
+  document.getElementById('trainFeedback').textContent='';
+  trainStart = Date.now();
+
+  // Séparer n'a de sens que sur une vraie paire (même valeur)
+  const isPair = rankValue(p1)===rankValue(p2);
+  if(trainButtonEls['SPLIT']){
+    trainButtonEls['SPLIT'].disabled = !isPair;
+    trainButtonEls['SPLIT'].style.opacity = isPair ? '1' : '0.3';
+    trainButtonEls['SPLIT'].style.cursor = isPair ? 'pointer' : 'not-allowed';
+  }
+}
+function startTrainTimer(){
+  clearInterval(trainTimerInt);
+  trainTimerInt = setInterval(()=>{
+    document.getElementById('trainTimer').textContent = Math.floor((Date.now()-trainStart)/1000)+'s';
+  }, 250);
+}
+const TRAIN_BUTTONS = [
+  {action:'HIT', label:'Tirer'}, {action:'STAND', label:'Rester'},
+  {action:'DOUBLE', label:'Doubler'}, {action:'SPLIT', label:'Séparer'},
+  {action:'SURRENDER', label:'Abandonner'},
+];
+function buildTrainActions(){
+  const el = document.getElementById('trainActions'); el.innerHTML='';
+  trainButtonEls = {};
+  TRAIN_BUTTONS.forEach(b=>{
+    const btn = document.createElement('button');
+    btn.textContent = b.label;
+    btn.addEventListener('click', ()=> { if(!btn.disabled){ haptic(20); answerTraining(b.action); } });
+    el.appendChild(btn);
+    trainButtonEls[b.action] = btn;
+  });
+}
+function answerTraining(chosen){
+  const opts = currentOpts();
+  const {action} = decide(trainCurrent.cards, trainCurrent.dealer, opts);
+  trainTotal++;
+  const fb = document.getElementById('trainFeedback');
+  if(chosen===action || (action==='BUST')){
+    trainScore++;
+    fb.style.color = 'var(--hit)';
+    fb.textContent = '✅ Correct !';
+  } else {
+    fb.style.color = 'var(--bust)';
+    fb.textContent = '❌ La bonne réponse : ' + actionLabels[action];
+  }
+  document.getElementById('trainScore').textContent = trainScore+'/'+trainTotal;
+  setTimeout(()=>{ generateTrainingHand(); }, 1200);
+}
+let trainSessionStarted = false;
+function startTrainingSession(){
+  trainScore=0; trainTotal=0;
+  document.getElementById('trainScore').textContent='0/0';
+  buildTrainActions();
+  generateTrainingHand();
+  startTrainTimer();
+  trainSessionStarted = true;
+}
+document.getElementById('closeTraining').addEventListener('click', startTrainingSession);
+
+// ================= Table de démo (jeu jouable, 100€, 1 à 5 places) =================
+let demoBankroll = 100;
+let demoNumSeats = 1;
+let demoShoeArr = [];
+let demoPhase = 'betting'; // betting | playing | dealer | resolved | gameover
+let demoSeats = []; // {betValue, hands:[{cards:[],suits:[],status,bet}]}
+let demoDealerCards = [], demoDealerSuits = [], demoDealerHiddenRevealed = false;
+let demoActiveSeat = 0, demoActiveHand = 0;
+
+function demoDraw(){
+  if(config.tableStyle==='robot') return RANKS[Math.floor(Math.random()*13)];
+  return drawFromShoeArr(demoShoeArr);
+}
+function demoMaybeReshuffle(){
+  if(config.tableStyle!=='real') return;
+  const total = demoShoeArr.reduce((a,b)=>a+b,0);
+  const full = config.numDecks*52;
+  if(total < full*0.25){
+    demoShoeArr = RANKS.map(()=>config.numDecks*4);
+    demoLog('🔀 Sabot de la table de démo remélangé (pénétration atteinte).');
+  }
+}
+function demoLog(text){
+  const el = document.getElementById('demoLog');
+  const d = document.createElement('div'); d.textContent = text; el.prepend(d);
+}
+
+function initDemoSeats(){
+  demoSeats = [];
+  for(let i=0;i<5;i++) demoSeats.push({betValue:10, hands:[]});
+}
+initDemoSeats();
+demoShoeArr = RANKS.map(()=>config.numDecks*4);
+
+document.getElementById('demoSeatMinus').addEventListener('click', ()=>{
+  if(demoPhase!=='betting') return;
+  demoNumSeats = Math.max(1, demoNumSeats-1);
+  demoRenderAll();
+});
+document.getElementById('demoSeatPlus').addEventListener('click', ()=>{
+  if(demoPhase!=='betting') return;
+  demoNumSeats = Math.min(5, demoNumSeats+1);
+  demoRenderAll();
+});
+
+function demoHandTotalStr(cards){
+  if(cards.length===0) return '';
+  const {total, soft} = handTotal(cards);
+  return (soft?'souple ':'') + total;
+}
+
+function demoRenderDealer(){
+  const row = document.getElementById('demoDealerRow');
+  row.innerHTML = '';
+  if(demoDealerCards.length===0){ row.innerHTML = '<div class="empty-slot"></div>'; }
+  else {
+    demoDealerCards.forEach((r,i)=>{
+      if(i===1 && !demoDealerHiddenRevealed && (demoPhase==='playing')){
+        const back = document.createElement('div');
+        back.className = 'playing-card black';
+        back.style.background = 'linear-gradient(135deg, var(--felt-light), var(--felt-dark))';
+        back.innerHTML = '<div class="suit-big" style="color:var(--gold); opacity:.5;">♠</div>';
+        row.appendChild(back);
+      } else {
+        row.appendChild(makeCardEl(r, demoDealerSuits[i], null, false));
+      }
+    });
+  }
+  const t = document.getElementById('demoDealerTotal');
+  t.textContent = (demoDealerHiddenRevealed || demoPhase!=='playing') && demoDealerCards.length>0 ? demoHandTotalStr(demoDealerCards) : (demoDealerCards.length>0 ? 'montre '+demoDealerCards[0] : '');
+}
+
+function chipStackHtml(bet){
+  // décomposition purement visuelle du montant en jetons (100/25/5), max ~6 jetons affichés
+  let remaining = Math.round(bet);
+  const denoms = [100,25,5];
+  let chips = [];
+  for(const d of denoms){
+    while(remaining>=d && chips.length<6){ chips.push(d); remaining-=d; }
+  }
+  if(chips.length===0 && bet>0) chips.push(5);
+  return '<div class="chip-stack">' + chips.map(d=>'<div class="chip chip-'+d+'"></div>').join('') + '</div>';
+}
+function demoRenderSeats(){
+  document.getElementById('demoSeatCountLabel').textContent = demoNumSeats + (demoNumSeats>1?' places':' place');
+  document.getElementById('demoSeatMinus').disabled = demoPhase!=='betting';
+  document.getElementById('demoSeatPlus').disabled = demoPhase!=='betting';
+  const wrap = document.getElementById('demoSeatsRow');
+  wrap.innerHTML = '';
+  for(let s=0; s<demoNumSeats; s++){
+    const seat = demoSeats[s];
+    const div = document.createElement('div');
+    div.className = 'demo-seat' + (demoPhase==='playing' && s===demoActiveSeat ? ' active-seat' : '');
+    let html = '<div class="seat-label">Place '+(s+1)+'</div>';
+    if(demoPhase==='betting'){
+      html += '<input type="number" class="bet-input" min="5" step="5" value="'+seat.betValue+'" data-seat="'+s+'">';
+      html += chipStackHtml(seat.betValue);
+    } else if(seat.hands.length===0){
+      html += '<div class="seat-total" style="opacity:.4;">assis</div>';
+    } else {
+      seat.hands.forEach((h, hi)=>{
+        const isActiveHand = demoPhase==='playing' && s===demoActiveSeat && hi===demoActiveHand;
+        html += '<div class="seat-hand'+(isActiveHand?' active-hand':'')+'"><div class="hand-cards" id="demoHandCards-'+s+'-'+hi+'"></div>';
+        html += '<div class="seat-total">'+(h.cards.length?demoHandTotalStr(h.cards):'')+'</div>';
+        html += chipStackHtml(h.bet);
+        html += '<div class="seat-status">'+demoStatusLabel(h)+'</div></div>';
+      });
+    }
+    div.innerHTML = html;
+    wrap.appendChild(div);
+  }
+  // insérer les vraies cartes (avec suit) après coup, car innerHTML plat ne peut pas garder les éléments DOM
+  for(let s=0; s<demoNumSeats; s++){
+    const seat = demoSeats[s];
+    seat.hands.forEach((h, hi)=>{
+      const target = document.getElementById('demoHandCards-'+s+'-'+hi);
+      if(!target) return;
+      h.cards.forEach((r,i)=>{
+        const c = makeCardEl(r, h.suits[i], null, false);
+        c.classList.add('mini');
+        target.appendChild(c);
+      });
+    });
+  }
+  // écouteurs des mises
+  wrap.querySelectorAll('.bet-input').forEach(inp=>{
+    inp.addEventListener('input', (e)=>{
+      const s = parseInt(e.target.dataset.seat);
+      demoSeats[s].betValue = parseFloat(e.target.value)||0;
+      // rafraîchit juste la pile de jetons de cette place sans tout redessiner (garde le focus du champ)
+      const chipWrap = e.target.parentElement.querySelector('.chip-stack');
+      if(chipWrap) chipWrap.outerHTML = chipStackHtml(demoSeats[s].betValue);
+    });
+  });
+}
+function demoStatusLabel(h){
+  const map = { playing:'', stand:'Reste', bust:'❌ Perdu (bust)', blackjack:'🂡 Blackjack !', surrender:'Abandon', doubled:'' };
+  return map[h.status] || '';
+}
+
+function demoRenderControls(){
+  const el = document.getElementById('demoControls');
+  const hint = document.getElementById('demoHint');
+  el.innerHTML = ''; hint.textContent = '';
+
+  if(demoBankroll < 5 && demoPhase==='betting'){
+    demoPhase='gameover';
+  }
+
+  if(demoPhase==='gameover'){
+    el.innerHTML = '<div class="demo-gameover">💸 Capital insuffisant pour la mise minimum (5€).<br><button class="primary" id="demoRestart" style="margin-top:10px;">Recommencer avec 100€</button></div>';
+    document.getElementById('demoRestart').addEventListener('click', ()=>{
+      demoBankroll = 100; demoPhase='betting'; initDemoSeats(); demoRenderAll();
+    });
+    return;
+  }
+
+  if(demoPhase==='betting'){
+    const btn = document.createElement('button');
+    btn.className = 'primary';
+    btn.textContent = 'Distribuer';
+    btn.addEventListener('click', ()=>{ haptic(20); demoDeal(); });
+    el.appendChild(btn);
+    hint.textContent = 'Mise minimum 5€ par place · maximum = ton capital restant.';
+    return;
+  }
+
+  if(demoPhase==='playing'){
+    const hand = demoSeats[demoActiveSeat].hands[demoActiveHand];
+    const opts = currentOpts();
+    const adviceAction = hand.cards.length>=2 ? decide(hand.cards, demoDealerCards[0], opts).action : null;
+    if(adviceAction) hint.textContent = '💡 Stratégie de base conseille : ' + actionLabels[adviceAction];
+
+    const mkBtn = (label, fn, disabled)=>{
+      const b = document.createElement('button');
+      b.textContent = label; b.disabled = !!disabled;
+      b.addEventListener('click', ()=>{ haptic(20); fn(); });
+      el.appendChild(b);
+    };
+    mkBtn('Tirer', demoHit);
+    mkBtn('Rester', demoStand);
+    const canDouble = hand.cards.length===2 && demoBankroll>=hand.bet;
+    mkBtn('Doubler', demoDouble, !canDouble);
+    const isPair = hand.cards.length===2 && rankValue(hand.cards[0])===rankValue(hand.cards[1]);
+    const canSplit = isPair && demoSeats[demoActiveSeat].hands.length===1 && demoBankroll>=hand.bet;
+    mkBtn('Séparer', demoSplit, !canSplit);
+    const canSurrender = hand.cards.length===2 && demoSeats[demoActiveSeat].hands.length===1;
+    mkBtn('Abandonner', demoSurrender, !canSurrender);
+    return;
+  }
+
+  if(demoPhase==='resolved'){
+    const btn = document.createElement('button');
+    btn.className = 'primary';
+    btn.textContent = 'Manche suivante';
+    btn.addEventListener('click', ()=>{ haptic(15); demoNextRound(); });
+    el.appendChild(btn);
+    return;
+  }
+}
+
+function demoRenderAll(){
+  document.getElementById('demoBankrollVal').textContent = demoBankroll.toFixed(2)+'€';
+  demoRenderDealer();
+  demoRenderSeats();
+  demoRenderControls();
+}
+
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+function dealCardToDom(containerId, rank, suit, asHiddenBack, isMini){
+  const container = document.getElementById(containerId);
+  if(!container) return;
+  const placeholder = container.querySelector('.empty-slot');
+  if(placeholder) container.innerHTML = '';
+  let el;
+  if(asHiddenBack){
+    el = document.createElement('div');
+    el.className = 'playing-card black';
+    el.style.background = 'linear-gradient(135deg, var(--felt-light), var(--felt-dark))';
+    el.innerHTML = '<div class="suit-big" style="color:var(--gold); opacity:.5;">♠</div>';
+  } else {
+    el = makeCardEl(rank, suit, null, false);
+  }
+  if(isMini) el.classList.add('mini');
+  container.appendChild(el);
+}
+function demoUpdateHandMeta(s, hi){
+  const seatEl = document.getElementById('demoSeatsRow').children[s];
+  if(!seatEl) return;
+  const handEls = seatEl.querySelectorAll('.seat-hand');
+  const handEl = handEls[hi];
+  if(!handEl) return;
+  const hand = demoSeats[s].hands[hi];
+  const totalEl = handEl.querySelector('.seat-total');
+  if(totalEl) totalEl.textContent = hand.cards.length ? demoHandTotalStr(hand.cards) : '';
+}
+
+async function demoDeal(){
+  let totalBet = 0;
+  for(let s=0;s<demoNumSeats;s++){
+    const b = demoSeats[s].betValue;
+    if(b<5){ demoLog('⚠️ Mise minimum 5€ à la place '+(s+1)+'.'); return; }
+    totalBet += b;
+  }
+  if(totalBet > demoBankroll){ demoLog('⚠️ Capital insuffisant pour couvrir toutes les mises ('+totalBet.toFixed(0)+'€ demandés).'); return; }
+
+  demoMaybeReshuffle();
+  demoBankroll -= totalBet;
+  demoDealerCards = []; demoDealerSuits = []; demoDealerHiddenRevealed = false;
+  for(let s=0;s<demoNumSeats;s++){
+    demoSeats[s].hands = [{cards:[], suits:[], status:'playing', bet:demoSeats[s].betValue}];
+  }
+  demoPhase = 'dealing';
+  demoRenderAll(); // construit les places vides une seule fois (pas de reconstruction ensuite pendant la distribution)
+
+  // Distribution façon vraie table : un tour de carte par joueur puis croupier, deux fois.
+  // Chaque carte est ajoutée individuellement au DOM (jamais de reconstruction totale) pour que
+  // les cartes déjà posées restent parfaitement immobiles et que seule la nouvelle carte s'anime.
+  document.getElementById('demoControls').innerHTML = '<div class="demo-hint" style="opacity:.7;">🂠 Distribution en cours…</div>';
+  for(let round=0; round<2; round++){
+    for(let s=0;s<demoNumSeats;s++){
+      const hand = demoSeats[s].hands[0];
+      const r = demoDraw(), suit = SUITS[Math.floor(Math.random()*4)];
+      hand.cards.push(r); hand.suits.push(suit);
+      dealCardToDom('demoHandCards-'+s+'-0', r, suit, false, true);
+      demoUpdateHandMeta(s, 0);
+      await sleep(220);
+    }
+    const r = demoDraw(), suit = SUITS[Math.floor(Math.random()*4)];
+    demoDealerCards.push(r); demoDealerSuits.push(suit);
+    dealCardToDom('demoDealerRow', r, suit, round===1, false);
+    await sleep(220);
+  }
+  demoPhase = 'playing';
+  for(let s=0;s<demoNumSeats;s++){
+    const hand = demoSeats[s].hands[0];
+    hand.status = (handTotal(hand.cards).total===21) ? 'blackjack' : 'playing';
+  }
+
+  demoActiveSeat = 0; demoActiveHand = 0;
+  demoAdvanceToNextActionable(true);
+  demoRenderAll();
+}
+
+function demoAdvanceToNextActionable(fromStart){
+  // avance jusqu'à trouver une main encore 'playing', sinon passe au croupier
+  let s = fromStart ? 0 : demoActiveSeat;
+  let h = fromStart ? 0 : demoActiveHand;
+  while(s < demoNumSeats){
+    const hands = demoSeats[s].hands;
+    while(h < hands.length){
+      if(hands[h].status==='playing'){ demoActiveSeat=s; demoActiveHand=h; return; }
+      h++;
+    }
+    s++; h=0;
+  }
+  demoStartDealerPhase();
+}
+
+function demoCurrentHand(){ return demoSeats[demoActiveSeat].hands[demoActiveHand]; }
+
+function demoHit(){
+  const hand = demoCurrentHand();
+  hand.cards.push(demoDraw());
+  hand.suits.push(SUITS[Math.floor(Math.random()*4)]);
+  const {total} = handTotal(hand.cards);
+  if(total>21){ hand.status='bust'; demoAdvanceToNextActionable(false); demoActiveHandAdvanceHelper(); }
+  else if(total===21){ hand.status='stand'; demoActiveHandAdvanceHelper(); }
+  demoRenderAll();
+}
+function demoActiveHandAdvanceHelper(){
+  // après résolution d'une main, cherche la suivante à partir d'ici (même seat, main suivante, ou seat suivant)
+  let s = demoActiveSeat, h = demoActiveHand+1;
+  demoActiveSeat = s; demoActiveHand = h;
+  demoAdvanceToNextActionable(false);
+}
+function demoStand(){
+  const hand = demoCurrentHand();
+  hand.status='stand';
+  demoActiveHandAdvanceHelper();
+  demoRenderAll();
+}
+function demoDouble(){
+  const hand = demoCurrentHand();
+  if(demoBankroll<hand.bet) return;
+  demoBankroll -= hand.bet;
+  hand.bet *= 2;
+  hand.cards.push(demoDraw());
+  hand.suits.push(SUITS[Math.floor(Math.random()*4)]);
+  const {total} = handTotal(hand.cards);
+  hand.status = total>21 ? 'bust' : 'stand';
+  demoActiveHandAdvanceHelper();
+  demoRenderAll();
+}
+function demoSplit(){
+  const seat = demoSeats[demoActiveSeat];
+  const hand = seat.hands[0];
+  if(demoBankroll<hand.bet) return;
+  demoBankroll -= hand.bet;
+  const c1=hand.cards[0], c2=hand.cards[1];
+  const isAceSplit = c1==='A';
+  const newCard1 = demoDraw(), newCard2 = demoDraw();
+  const hand1 = {cards:[c1,newCard1], suits:[hand.suits[0], SUITS[Math.floor(Math.random()*4)]], status: isAceSplit?'stand':'playing', bet:hand.bet};
+  const hand2 = {cards:[c2,newCard2], suits:[hand.suits[1], SUITS[Math.floor(Math.random()*4)]], status: isAceSplit?'stand':'playing', bet:hand.bet};
+  seat.hands = [hand1, hand2];
+  demoActiveHand = 0;
+  demoAdvanceToNextActionable(false);
+  demoRenderAll();
+}
+function demoSurrender(){
+  const hand = demoCurrentHand();
+  hand.status = 'surrender';
+  demoActiveHandAdvanceHelper();
+  demoRenderAll();
+}
+
+async function demoStartDealerPhase(){
+  demoPhase = 'dealer';
+  demoDealerHiddenRevealed = true;
+  demoRenderDealer(); // révèle la carte cachée avant de continuer à tirer (seul rebuild complet, une fois)
+  document.getElementById('demoHint').textContent = '🂠 Le croupier retourne sa carte cachée…';
+  await sleep(500);
+  // le croupier joue seulement si au moins une main adverse est encore en jeu (stand/blackjack, pas que des bust/surrender)
+  const anyoneLeft = demoSeats.slice(0,demoNumSeats).some(seat => seat.hands.some(h=> h.status==='stand' || h.status==='blackjack'));
+  if(anyoneLeft){
+    while(true){
+      const {total, soft} = handTotal(demoDealerCards);
+      if(total>21) break;
+      if(total>=17){
+        if(total===17 && soft && config.dealerHitsSoft17){
+          const r=demoDraw(), suit=SUITS[Math.floor(Math.random()*4)];
+          demoDealerCards.push(r); demoDealerSuits.push(suit);
+          dealCardToDom('demoDealerRow', r, suit, false, false);
+          await sleep(500); continue;
+        }
+        break;
+      }
+      const r=demoDraw(), suit=SUITS[Math.floor(Math.random()*4)];
+      demoDealerCards.push(r); demoDealerSuits.push(suit);
+      dealCardToDom('demoDealerRow', r, suit, false, false);
+      document.getElementById('demoHint').textContent = '🂠 Le croupier tire…';
+      await sleep(500);
+    }
+  }
+  document.getElementById('demoHint').textContent = '';
+  demoResolvePayouts();
+}
+
+function demoResolvePayouts(){
+  const dealerHt = handTotal(demoDealerCards);
+  const dealerBust = dealerHt.total>21;
+  const dealerNatural = demoDealerCards.length===2 && dealerHt.total===21;
+  const bankrollBefore = demoBankroll;
+  for(let s=0;s<demoNumSeats;s++){
+    demoSeats[s].hands.forEach(h=>{
+      let credit = 0;
+      if(h.status==='surrender'){ credit = h.bet*0.5; }
+      else if(h.status==='bust'){ credit = 0; }
+      else {
+        const isNatural = h.status==='blackjack';
+        const playerTotal = handTotal(h.cards).total;
+        if(isNatural && dealerNatural) credit = h.bet;
+        else if(isNatural) credit = h.bet + h.bet*config.blackjackPayout;
+        else if(dealerBust) credit = h.bet*2;
+        else if(playerTotal>dealerHt.total) credit = h.bet*2;
+        else if(playerTotal===dealerHt.total) credit = h.bet;
+        else credit = 0;
+      }
+      demoBankroll += credit;
+      const net = credit - h.bet;
+      h.resultLabel = net>0 ? ('+' + net.toFixed(2)+'€') : (net<0 ? (net.toFixed(2)+'€') : 'push');
+      h.resultEmoji = net>0 ? '🎉' : (net<0 ? '💥' : '🤝');
+    });
+  }
+  demoPhase = 'resolved';
+  demoLog('Manche résolue — capital : ' + demoBankroll.toFixed(2) + '€');
+  if(demoBankroll > bankrollBefore) haptic([25,40,25]);
+  else if(demoBankroll < bankrollBefore) haptic(60);
+  demoRenderAllWithResults();
+  const bEl = document.getElementById('demoBankrollVal');
+  bEl.classList.remove('flash-up','flash-down');
+  if(demoBankroll>bankrollBefore) bEl.classList.add('flash-up');
+  else if(demoBankroll<bankrollBefore) bEl.classList.add('flash-down');
+  setTimeout(()=> bEl.classList.remove('flash-up','flash-down'), 1200);
+}
+
+function demoRenderAllWithResults(){
+  document.getElementById('demoBankrollVal').textContent = demoBankroll.toFixed(2)+'€';
+  demoRenderDealer();
+  demoRenderSeats();
+  // superpose le résultat net + petite animation sur le statut de chaque main
+  for(let s=0;s<demoNumSeats;s++){
+    demoSeats[s].hands.forEach((h,hi)=>{
+      const seatEl = document.getElementById('demoSeatsRow').children[s];
+      if(!seatEl) return;
+      const statusEls = seatEl.querySelectorAll('.seat-status');
+      if(statusEls[hi]){
+        statusEls[hi].textContent = (demoStatusLabel(h)+' '+(h.resultLabel||'')).trim();
+        if(h.resultLabel && h.resultLabel.startsWith('+')) statusEls[hi].style.color = 'var(--hit)';
+        else if(h.resultLabel && h.resultLabel.startsWith('-')) statusEls[hi].style.color = 'var(--bust)';
+        if(h.resultEmoji){
+          const flash = document.createElement('div');
+          flash.className = 'result-flash';
+          flash.textContent = h.resultEmoji;
+          flash.style.left = '50%'; flash.style.top = '-4px'; flash.style.transform='translateX(-50%)';
+          const handEl = seatEl.querySelectorAll('.seat-hand')[hi];
+          if(handEl){ handEl.style.position='relative'; handEl.appendChild(flash); setTimeout(()=>flash.remove(), 900); }
+        }
+      }
+    });
+  }
+  demoRenderControls();
+}
+
+function demoNextRound(){
+  if(demoBankroll < 5){ demoPhase='gameover'; demoRenderAll(); return; }
+  demoPhase = 'betting';
+  demoSeats.forEach(seat=>{ seat.hands=[]; });
+  demoRenderAll();
+}
+
+// (Le service worker pour l'usage hors-ligne a été retiré de cette page : quand le site est
+// visualisé comme artefact Claude ou copié-collé ailleurs, le fichier sw.js n'est pas hébergé au
+// même endroit, et la tentative d'enregistrement provoquait des erreurs selon l'environnement.
+// Pour une vraie installation PWA hors-ligne, héberge blackjack-strategie.html, manifest.json et
+// sw.js ensemble sur un hébergement statique — voir la note en bas de page.)
+
+// ================= Plein écran (table démo) + verrouillage d'orientation =================
+function safeOrientationLock(){
+  try{
+    if(screen.orientation && screen.orientation.lock){
+      const p = screen.orientation.lock('portrait');
+      if(p && p.catch) p.catch(()=>{});
+    }
+  }catch(e){ /* verrouillage non supporté dans ce contexte (hors plein écran, iframe sandboxée, etc.) */ }
+}
+function enterDemoFullscreen(){
+  document.body.classList.add('demo-fullscreen-active');
+  try{
+    const el = document.documentElement;
+    const req = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen;
+    if(req){
+      const p = req.call(el);
+      if(p && p.then){ p.then(safeOrientationLock).catch(()=>{}); }
+      else { safeOrientationLock(); }
+    }
+  }catch(e){ /* plein écran refusé (ex: iframe sans permission) — la mise en page réduite reste appliquée */ }
+}
+function exitDemoFullscreen(){
+  document.body.classList.remove('demo-fullscreen-active');
+  try{
+    if(document.fullscreenElement || document.webkitFullscreenElement){
+      const exit = document.exitFullscreen || document.webkitExitFullscreen;
+      if(exit){ const p = exit.call(document); if(p && p.catch) p.catch(()=>{}); }
+    }
+  }catch(e){}
+}
+document.getElementById('demoFullscreenBtn').addEventListener('click', ()=>{ haptic(15); enterDemoFullscreen(); });
+document.getElementById('exitFullscreenBtn').addEventListener('click', ()=>{ haptic(15); exitDemoFullscreen(); });
+['fullscreenchange','webkitfullscreenchange'].forEach(evt=>{
+  document.addEventListener(evt, ()=>{
+    if(!document.fullscreenElement && !document.webkitFullscreenElement){
+      document.body.classList.remove('demo-fullscreen-active');
+    }
+  });
+});
+// Tentative de verrouillage portrait dès le chargement (échoue silencieusement hors PWA/plein écran, la
+// bannière CSS @media (orientation: landscape) prend alors le relais comme solution fiable).
+safeOrientationLock();
+
+// ================= Onglets =================
+let currentTab = 'live';
+function switchTab(tab){
+  currentTab = tab;
+  document.querySelectorAll('.tab-panel').forEach(p=> p.classList.toggle('active', p.dataset.tab===tab));
+  document.querySelectorAll('.tab-btn').forEach(b=> b.classList.toggle('active', b.dataset.tab===tab));
+  if(tab==='training' && !trainSessionStarted){ startTrainingSession(); }
+  if(tab==='demo'){ demoRenderAll(); }
+}
+document.querySelectorAll('.tab-btn').forEach(b=>{
+  b.addEventListener('click', ()=> switchTab(b.dataset.tab));
+});
+
+// ================= Init =================
+resetShoe(false);
+buildStrategyGrid();
+renderResolveButtons();
+renderDealerZone();
+renderPlayerZone();
+evaluate();
+</script>
+</body>
+</html>
